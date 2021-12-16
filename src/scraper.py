@@ -4,6 +4,7 @@ import threading
 class Scraper(threading.Thread):
 
     def __init__(self, company_name):
+        threading.Thread.__init__(self)
         self.search = company_name + " #climatechange"
 
         # Authenticate to Twitter
@@ -21,7 +22,7 @@ class Scraper(threading.Thread):
             print("Error during authentication")
 
     def run(self):
-
-        for tweet in self.api.search_tweets(q=self.search, lang="en", rpp=10):
+        print("SEARCH TERM = " + self.search)
+        for tweet in self.api.search_tweets(q=self.search, lang="en", count=10):
             print(f"{tweet.user.name}:{tweet.text}")
 
