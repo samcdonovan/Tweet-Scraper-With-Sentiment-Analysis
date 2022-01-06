@@ -1,0 +1,8 @@
+# Excel spreadsheets that contain the Tweets
+*.xlsx
+
+# Pipenv Pipfilegit 
+.Pipfile
+
+# VSCode settings
+.vscode
