@@ -4,7 +4,7 @@
 # Pipenv Pipfile
 Pipfile
 
-# VSCode settings
+# VSCode settings, personalised for this project
 .vscode
 
 # Folder containing all data
