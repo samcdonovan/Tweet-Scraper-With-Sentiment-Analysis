@@ -1,5 +1,6 @@
 import tweepy
 import string
+import os
 import threading
 import unicodedata
 import sys
@@ -17,12 +18,12 @@ class Scraper(threading.Thread):
         threading.Thread.__init__(self)
         self.search = company_name + " #climatechange"
 
+        print(os.getenv('TWITTER_CONSUMER'))
         # Authenticate to Twitter
-        auth = tweepy.OAuthHandler("RaKuC9WJl7S2F62ozpgRvPffj", 
-            "VQzOOzYZuhsID6MjU9Dwao9uTIPbwI6SfBxrquMu3mSLZdzZNj")
-        auth.set_access_token("1455271107897004037-p3Or3Ou6AaDDkHU29PIPOomYhpaPmE", 
-        "j2peXe5kx7ZhBPv5LYFgzErXZbmdLuG3GWvXyDMIUeIi1")
+        auth = tweepy.OAuthHandler(os.getenv('TWITTER_CONSUMER'), os.getenv('TWITTER_CONSUMER_SECRET'))
 
+        auth.set_access_token(os.getenv('TWITTER_ACCESS'), os.getenv('TWITTER_ACCESS_SECRET'))
+       
         self.api = tweepy.API(auth)
 
         try:

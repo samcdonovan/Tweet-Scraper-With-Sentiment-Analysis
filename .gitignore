@@ -9,3 +9,6 @@ Pipfile
 
 # Folder containing all data
 data
+
+# Environment variables which contain Twitter API access keys
+.env
