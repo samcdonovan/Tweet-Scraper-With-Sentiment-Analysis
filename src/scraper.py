@@ -18,10 +18,10 @@ class Scraper(threading.Thread):
         self.search = company_name + " #climatechange"
 
         # Authenticate to Twitter
-        auth = tweepy.OAuthHandler("WESM4XEo8vZYv5AARe4gdNWTA", 
-            "VwxQHFdpFr5elAcEYVIiAF7daX6opH04HemyLSyeC2aUehlf92")
-        auth.set_access_token("1455271107897004037-trpcifKKBpUrlEbOvFPqt4sw2CSXq6", 
-        "kHYrzrpwtLso2cAqBuh9I1xiXhLQFz7oNAVARunnKNp8N")
+        auth = tweepy.OAuthHandler("RaKuC9WJl7S2F62ozpgRvPffj", 
+            "VQzOOzYZuhsID6MjU9Dwao9uTIPbwI6SfBxrquMu3mSLZdzZNj")
+        auth.set_access_token("1455271107897004037-p3Or3Ou6AaDDkHU29PIPOomYhpaPmE", 
+        "j2peXe5kx7ZhBPv5LYFgzErXZbmdLuG3GWvXyDMIUeIi1")
 
         self.api = tweepy.API(auth)
 

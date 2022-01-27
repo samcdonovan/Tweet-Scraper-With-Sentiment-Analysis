@@ -15,7 +15,7 @@ scraper_list = [scraper_amazon, scraper_facebook, scraper_google]
 
 manager = scraper_manager.ScraperManager(scraper_list)
 
-#manager.start_threads()
+manager.start_threads()
 
 dao = tweet_dao.TweetDAO()
 
