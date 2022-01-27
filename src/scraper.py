@@ -11,15 +11,16 @@ nltk.download('omw-1.4')
 nltk.download('averaged_perceptron_tagger')
 from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
+import tweet
 
 class Scraper(threading.Thread):
 
     def __init__(self, company_name):
         threading.Thread.__init__(self)
-        self.search = company_name + " #climatechange"
-
-        print(os.getenv('TWITTER_CONSUMER'))
-        # Authenticate to Twitter
+        self.company_name = company_name
+        #self.search = company_name + " #Climate #Change"
+        self.search = "#climatechange"
+        # Authenticate Twitter API with environment variables
         auth = tweepy.OAuthHandler(os.getenv('TWITTER_CONSUMER'), os.getenv('TWITTER_CONSUMER_SECRET'))
 
         auth.set_access_token(os.getenv('TWITTER_ACCESS'), os.getenv('TWITTER_ACCESS_SECRET'))
@@ -35,9 +36,9 @@ class Scraper(threading.Thread):
     def run(self):
         wnl = WordNetLemmatizer()
         print("SEARCH TERM = " + self.search)
-        for tweet in self.api.search_tweets(q=self.search +" -filter:retweets", lang="en", count=10):
+        for search_tweet in self.api.search_tweets(q=self.search +" -filter:retweets", lang="en", count=10):
 ##            print(f"{tweet.user.name}:{tweet.text}")
-            converted_tweet = self.convert_to_list(tweet.text)
+            converted_tweet = self.convert_to_list(search_tweet.text)
             print(converted_tweet)
             tagged = nltk.pos_tag(converted_tweet)
             wordnet_tagged = list(map(lambda x: (x[0], self.pos_tagger(x[1])), tagged))
@@ -53,6 +54,8 @@ class Scraper(threading.Thread):
             lemmatized_sentence = " ".join(lemmatized_sentence)
  
             print(lemmatized_sentence)
+            print(search_tweet.created_at)
+            tweet.Tweet(self.company_name, search_tweet.text, lemmatized_sentence, search_tweet.created_at)
 
     def pos_tagger(self, nltk_tag):
         if nltk_tag.startswith('J'):

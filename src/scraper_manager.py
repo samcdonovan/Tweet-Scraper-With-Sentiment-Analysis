@@ -1,6 +1,4 @@
 
-
-
 class ScraperManager():
 
     def __init__(self, scraper_list):

@@ -3,16 +3,16 @@ import tweet_dao
 import scraper
 import scraper_manager
 
-response = requests.get('https://httpbin.org/ip')
+#response = requests.get('https://httpbin.org/ip')
 
-print('Your IP is {0}'.format(response.json()['origin']))
+#print('Your IP is {0}'.format(response.json()['origin']))
 
-scraper_amazon = scraper.Scraper("#amazon")
-scraper_facebook = scraper.Scraper("#facebook")
+#scraper_amazon = scraper.Scraper("#amazon")
+#scraper_facebook = scraper.Scraper("#facebook")
 scraper_google = scraper.Scraper("#google")
 
-scraper_list = [scraper_amazon, scraper_facebook, scraper_google]
-
+#scraper_list = [scraper_amazon, scraper_facebook, scraper_google]
+scraper_list = [scraper_google]
 manager = scraper_manager.ScraperManager(scraper_list)
 
 manager.start_threads()
