@@ -55,6 +55,7 @@ class Scraper(threading.Thread):
  
             print(lemmatized_sentence)
             print(search_tweet.created_at)
+            
             tweet.Tweet(self.company_name, search_tweet.text, lemmatized_sentence, search_tweet.created_at)
 
     def pos_tagger(self, nltk_tag):
