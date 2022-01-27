@@ -6,3 +6,6 @@ Pipfile
 
 # VSCode settings
 .vscode
+
+# Folder containing all data
+data
