@@ -10,13 +10,7 @@ from mysql.connector import errorcode
 from sqlalchemy import create_engine
 
 import mysql.connector
-#mydb = mysql.connector.connect(
- # host="localhost",
-  #user="root",
-  #password=""
-#)
 
-#print(mydb)
 class TweetDAO():
 
   def init_db(self):
@@ -27,17 +21,16 @@ class TweetDAO():
         password="",
         database='scraped_tweets'
       )
+
       self.cursor = self.sql_db.cursor()
-    except mysql.connector.Error as err:
-      if err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-        print("Something is wrong with your user name or password")
-      elif err.errno == errorcode.ER_BAD_DB_ERROR:
-        print("Database does not exist")
+
+    except mysql.connector.Error as error:
+      if error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
+        print("Username or password do not match.")
+      elif error.errno == errorcode.ER_BAD_DB_ERROR:
+        print("Cannot locate database.")
       else:
-        print(err)
-    #else:
-      #self.sql_db.close()
-    print(self.sql_db)
+        print(error)
 
   def add_to_database(self, tweet):
 
@@ -51,8 +44,6 @@ class TweetDAO():
 
     self.sql_db.commit()
     
-
-
   def close_connection(self):
     self.cursor.close()
     self.sql_db.close()
