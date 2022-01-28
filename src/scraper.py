@@ -18,8 +18,8 @@ class Scraper(threading.Thread):
     def __init__(self, company_name):
         threading.Thread.__init__(self)
         self.company_name = company_name
-        #self.search = company_name + " #Climate #Change"
-        self.search = "#climatechange"
+        self.search = "#" + company_name + " #Climate #Change"
+        #self.search = "#climatechange"
         # Authenticate Twitter API with environment variables
         auth = tweepy.OAuthHandler(os.getenv('TWITTER_CONSUMER'), os.getenv('TWITTER_CONSUMER_SECRET'))
 
@@ -36,7 +36,7 @@ class Scraper(threading.Thread):
     def run(self):
         wnl = WordNetLemmatizer()
         print("SEARCH TERM = " + self.search)
-        for search_tweet in self.api.search_tweets(q=self.search +" -filter:retweets", lang="en", count=10):
+        for search_tweet in self.api.search_tweets(q = self.search + " -filter:retweets", lang = "en", count=10):
 ##            print(f"{tweet.user.name}:{tweet.text}")
             converted_tweet = self.convert_to_list(search_tweet.text)
             print(converted_tweet)
@@ -55,7 +55,7 @@ class Scraper(threading.Thread):
  
             print(lemmatized_sentence)
             print(search_tweet.created_at)
-            
+
             tweet.Tweet(self.company_name, search_tweet.text, lemmatized_sentence, search_tweet.created_at)
 
     def pos_tagger(self, nltk_tag):
