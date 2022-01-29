@@ -3,7 +3,11 @@ class ScraperManager():
 
     def __init__(self, scraper_list, tweet_dao):
         self.scraper_list = scraper_list
-        self.tweet_dao = tweet_dao
+
+        tweet_dao.init_db()
+
+        for scraper in self.scraper_list:
+            scraper.set_dao(tweet_dao)
 
     def start_threads(self):
         print(self.scraper_list)
@@ -11,4 +15,4 @@ class ScraperManager():
             scraper.run()
 
     def finalise(self):
-        self.tweet_dao.save_and_close_database()
+        self.scraper_list[0].tweet_dao.close_connection()

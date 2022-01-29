@@ -26,7 +26,7 @@ class TweetDAO():
 
     except mysql.connector.Error as error:
       if error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
-        print("Username or password do not match.")
+        print("Username or password does not match.")
       elif error.errno == errorcode.ER_BAD_DB_ERROR:
         print("Cannot locate database.")
       else:
@@ -34,11 +34,19 @@ class TweetDAO():
 
   def add_to_database(self, tweet):
 
-   
+    check_unique = "SELECT * FROM tweets WHERE id = " + str(tweet.unique_id)
+    self.cursor.execute(check_unique)
+
+    check_result = self.cursor.fetchall()
+
+    if len(check_result) > 0:
+      print("Tweet with ID " + str(tweet.unique_id) + " already exists in the database.")
+      return None
+
     add_tweet = ("INSERT INTO tweets "
-                "(company, original_tweet, cleaned_tweet, timestamp)"
-                "VALUES (%s, %s, %s, %s)")
-    tweet_data = (tweet.company, tweet.original_tweet, tweet.cleaned_text, tweet.time)
+                "(id, company, original_tweet, cleaned_tweet, timestamp)"
+                "VALUES (%s, %s, %s, %s, %s)")
+    tweet_data = (tweet.unique_id, tweet.company, tweet.original_tweet, tweet.cleaned_text, tweet.time)
 
     self.cursor.execute(add_tweet, tweet_data) 
 
@@ -48,7 +56,6 @@ class TweetDAO():
     self.cursor.close()
     self.sql_db.close()
     print("Database connection closed.")
-   
  
   def init_db_excel(self):
     #print(os.path.abspath(os.curdir))

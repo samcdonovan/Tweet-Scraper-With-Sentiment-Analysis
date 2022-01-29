@@ -18,7 +18,8 @@ class Scraper(threading.Thread):
     def __init__(self, company_name):
         threading.Thread.__init__(self)
         self.company_name = company_name
-        self.search = "#" + company_name + " #Climate #Change"
+        self.search = "#" + company_name + " #ClimateChange"
+        #self.tweet_dao = tweet_dao
         #self.search = "#climatechange"
         # Authenticate Twitter API with environment variables
         auth = tweepy.OAuthHandler(os.getenv('TWITTER_CONSUMER'), os.getenv('TWITTER_CONSUMER_SECRET'))
@@ -32,6 +33,9 @@ class Scraper(threading.Thread):
             print("Authentication OK")
         except:
             print("Error during authentication")
+    
+    def set_dao(self, tweet_dao):
+        self.tweet_dao = tweet_dao
 
     def run(self):
         wnl = WordNetLemmatizer()
@@ -39,7 +43,7 @@ class Scraper(threading.Thread):
         for search_tweet in self.api.search_tweets(q = self.search + " -filter:retweets", lang = "en", count=10):
 ##            print(f"{tweet.user.name}:{tweet.text}")
             converted_tweet = self.convert_to_list(search_tweet.text)
-            print(converted_tweet)
+            #print(converted_tweet)
             tagged = nltk.pos_tag(converted_tweet)
             wordnet_tagged = list(map(lambda x: (x[0], self.pos_tagger(x[1])), tagged))
              
@@ -53,10 +57,10 @@ class Scraper(threading.Thread):
                     lemmatized_sentence.append(wnl.lemmatize(word, tag))
             lemmatized_sentence = " ".join(lemmatized_sentence)
  
-            print(lemmatized_sentence)
-            print(search_tweet.created_at)
+           # print(lemmatized_sentence)
+            #print(search_tweet.id)
+            self.tweet_dao.add_to_database(tweet.Tweet(search_tweet.id, self.company_name, search_tweet.text, lemmatized_sentence, search_tweet.created_at))
 
-            tweet.Tweet(self.company_name, search_tweet.text, lemmatized_sentence, search_tweet.created_at)
 
     def pos_tagger(self, nltk_tag):
         if nltk_tag.startswith('J'):
@@ -80,7 +84,7 @@ class Scraper(threading.Thread):
                 if word.lower() in stop_word:
                     stop_check = bool(True)
 
-            if not stop_check:
+            if not stop_check and "http" not in word:
                 word = word.translate(dict.fromkeys(i for i in range(sys.maxunicode)
                                                         if unicodedata.category(chr(i)).startswith('P')))
                ## print("word: " +word + " --> " + wnl.lemmatize(word))
