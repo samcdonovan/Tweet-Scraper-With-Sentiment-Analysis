@@ -15,18 +15,26 @@ dao = TweetDAO()
 
 scraper_amazon = scraper.Scraper("amazon")
 scraper_facebook = scraper.Scraper("facebook")
+scraper_netflix = scraper.Scraper("netflix")
 scraper_google = scraper.Scraper("google")
 
-scraper_list = [scraper_amazon, scraper_facebook, scraper_google]
+#scraper_amazon.get_list_of_dates()
+
+scraper_list = [scraper_amazon, scraper_facebook, scraper_netflix, scraper_google]
 #scraper_list = [scraper_google]
 
 manager = scraper_manager.ScraperManager(scraper_list, dao)
 
 manager.start_threads()
-
-manager.finalise()
+#manager.start_single_thread("amazon")
+#manager.finalise()
 
 exit = 2
+
+#if __name__ == '__main__':
+ # manager.start_threads()
+    #pool = Pool()                         # Create a multiprocessing Pool
+    #pool.map(process_image, data_inputs)
 
 if not exit:
   print("true")

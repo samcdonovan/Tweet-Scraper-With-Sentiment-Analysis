@@ -8,6 +8,7 @@ from openpyxl.styles import Font
 import sqlalchemy as sal
 from mysql.connector import errorcode
 from sqlalchemy import create_engine
+import datetime
 
 import mysql.connector
 
@@ -30,7 +31,35 @@ class TweetDAO():
       elif error.errno == errorcode.ER_BAD_DB_ERROR:
         print("Cannot locate database.")
       else:
+        print("Database error: ")
         print(error)
+
+  def get_tweet_id_with_date(self, min_or_max, current_date, company_name):
+    previous_date = current_date - datetime.timedelta(1)
+    query = "SELECT " + min_or_max + "(id) FROM tweets WHERE company='" + company_name + "' AND timestamp BETWEEN '%s' and '%s'" % (previous_date, current_date)
+    self.cursor.execute(query)
+    tweet_id = self.cursor.fetchone()
+    if tweet_id is None:
+      tweet_id = 0
+    print(tweet_id)
+    return tweet_id
+
+  def get_newest_tweet(self, company_name):
+    query = "SELECT MAX(id), MAX(timestamp) FROM tweets WHERE timestamp = (SELECT MAX(timestamp) FROM tweets WHERE company='" + company_name + "')" 
+    print(query)
+    try:
+        self.cursor.execute(query)
+    except mysql.connector.Error as error:
+        print("SQL database error: " + error)
+        #sys.exit(1)
+    
+    return self.cursor.fetchone()
+
+  def get_tweet_id(self, min_or_max):
+    query = "SELECT " + min_or_max + "(id) FROM tweets"
+    self.cursor.execute(query)
+
+    return self.cursor.fetchone()
 
   def add_to_database(self, tweet):
 
