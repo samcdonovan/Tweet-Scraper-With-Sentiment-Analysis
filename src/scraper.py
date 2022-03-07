@@ -25,11 +25,13 @@ class Scraper():
         self.search_terms = [company_name + " Climate Change" + " -filter:retweets",
         "#" + company_name + " #ClimateChange -filter:retweets", company_name + " #ClimateChange -filter:retweets"]
         self.thread_complete = False
+
         #self.tweet_dao = tweet_dao
         #self.search = "#climatechange"
     
     def setup(self, tweet_dao, api, wnl, wordnet, nltk):
         self.tweet_dao = tweet_dao
+        self.tweet_dao.set_cursor(self.tweet_dao.connection.cursor(buffered = True))
         self.api = api
         self.wnl = wnl
         self.wordnet = wordnet     
@@ -39,17 +41,16 @@ class Scraper():
         #self.thread = Thread(target = self.heello())
         #for search_tweet in self.api.search_tweets(q = self.search + " -filter:retweets", lang = "en", count=10):
         #self.thread.start()
-        #print(self.search_terms)
-        print("y")
+   
         for search in self.search_terms:
-            print("w")
+       
             time.sleep(5)
             self.search = search
             self.get_tweets()
        # print(self.tweet_dao.get_tweet_id("MAX"))
         #print(self.tweet_dao.get_tweet_id("MIN"))
             i=0
-            print("hello")
+          
             for search_tweet in self.search_tweets:
                 i += 1
                 print("tweet no.: " + str(i))
@@ -79,16 +80,22 @@ class Scraper():
 
     def get_tweets(self):
         today = datetime.datetime.now().replace(hour = 23, minute = 59, second = 59, microsecond = 999999)
-        print("o")
+    
         newest_timestamp = self.tweet_dao.get_newest_tweet(self.company_name)[1]
-        print(newest_timestamp)
-        number_of_days =  (today - newest_timestamp).days
-       
-        if number_of_days > 7:
+        print("newest"+str(newest_timestamp) + " typeof " + str(type(newest_timestamp)))
+
+        if not isinstance(newest_timestamp, datetime.datetime):
             number_of_days = 7
+        else:    
+            number_of_days =  (today - newest_timestamp).days
+            if number_of_days > 7:
+                number_of_days = 7
 
         oldest_id = self.tweet_dao.get_tweet_id_with_date("MIN", today, self.company_name)
-        print(oldest_id)
+
+        if oldest_id[0] is None:
+            oldest_id = 1
+        print("oldest" +str(oldest_id))
         for day_index in range(number_of_days, -1, -1):
             #current_day_index = day
             current_day_in_week = today - datetime.timedelta(day_index)

@@ -1,4 +1,5 @@
 from concurrent.futures import thread
+from tweet_dao import TweetDAO
 import tweepy
 import os
 ##from textblob import TextBlob, Word
@@ -33,6 +34,8 @@ class ScraperManager():
         for scraper in self.scraper_list:
             #scraper.set_dao(tweet_dao)
             #scraper.set_api(api)
+           # tweet_dao = TweetDAO()
+           # tweet_dao.init_db()
             scraper.setup(tweet_dao, api, wnl, wordnet, nltk)
 
     def start_threads(self):

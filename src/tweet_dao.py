@@ -2,6 +2,7 @@
 from re import S
 import pandas
 import os
+import time
 import xlsxwriter
 import openpyxl
 from openpyxl.styles import Font
@@ -15,15 +16,18 @@ import mysql.connector
 class TweetDAO():
 
   def init_db(self):
+    self.new_connection()
+
+  def new_connection(self):
     try:
-      self.sql_db = mysql.connector.connect(
+      self.connection = mysql.connector.connect(
         host="localhost",
         user="root",
         password="",
         database='scraped_tweets'
       )
 
-      self.cursor = self.sql_db.cursor()
+      #self.cursor = self.connection.cursor()
 
     except mysql.connector.Error as error:
       if error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -34,26 +38,69 @@ class TweetDAO():
         print("Database error: ")
         print(error)
 
+  def set_cursor(self, cursor):
+    self.cursor = cursor
+
   def get_tweet_id_with_date(self, min_or_max, current_date, company_name):
     previous_date = current_date - datetime.timedelta(1)
     query = "SELECT " + min_or_max + "(id) FROM tweets WHERE company='" + company_name + "' AND timestamp BETWEEN '%s' and '%s'" % (previous_date, current_date)
-    self.cursor.execute(query)
-    tweet_id = self.cursor.fetchone()
+    connection = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database='scraped_tweets'
+    )
+    cursor = connection.cursor(buffered = True)
+    cursor.execute(query)
+    tweet_id = cursor.fetchone()
     if tweet_id is None:
       tweet_id = 0
     print(tweet_id)
+
+    cursor.close()
+    connection.close()
     return tweet_id
 
   def get_newest_tweet(self, company_name):
     query = "SELECT MAX(id), MAX(timestamp) FROM tweets WHERE timestamp = (SELECT MAX(timestamp) FROM tweets WHERE company='" + company_name + "')" 
-    print(query)
+   
+    #self.connection.reconnect()
+    #self.new_connection()
+    #self.cursor.close()
+    #self.connection.close()
+    connection = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database='scraped_tweets'
+      )
+    cursor = connection.cursor(buffered = True)
+ 
     try:
-        self.cursor.execute(query)
+       # print("m")
+        time.sleep(2)
+       # print("d")
+        #try:
+        #print(cursor)
+        cursor.execute(query)
+       # except Exception as error:
+          #print("error: " + str(error))
+        #print("s")
+        #self.connection.commit()
+        #print("y")
+        tweet = cursor.fetchone()
+       # print(tweet)
+        cursor.close()
+        connection.close()
+        return tweet
     except mysql.connector.Error as error:
-        print("SQL database error: " + error)
+        print("SQL database error: " + str(error))
+        cursor.close()
+        connection.close()
+        return None
         #sys.exit(1)
     
-    return self.cursor.fetchone()
+   # return self.cursor.fetchone()
 
   def get_tweet_id(self, min_or_max):
     query = "SELECT " + min_or_max + "(id) FROM tweets"
@@ -62,11 +109,17 @@ class TweetDAO():
     return self.cursor.fetchone()
 
   def add_to_database(self, tweet):
-
+    connection = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        password="",
+        database='scraped_tweets'
+      )
+    cursor = connection.cursor(buffered = True)
     check_unique = "SELECT * FROM tweets WHERE id = " + str(tweet.unique_id)
-    self.cursor.execute(check_unique)
+    cursor.execute(check_unique)
 
-    check_result = self.cursor.fetchall()
+    check_result = cursor.fetchall()
 
     if len(check_result) > 0:
       print("Tweet with ID " + str(tweet.unique_id) + " already exists in the database.")
@@ -77,13 +130,16 @@ class TweetDAO():
                 "VALUES (%s, %s, %s, %s, %s)")
     tweet_data = (tweet.unique_id, tweet.company, tweet.original_tweet, tweet.cleaned_text, tweet.time)
 
-    self.cursor.execute(add_tweet, tweet_data) 
+    cursor.execute(add_tweet, tweet_data) 
 
-    self.sql_db.commit()
-    
+    connection.commit()
+    cursor.close()
+    connection.close()
+
   def close_connection(self):
+  
     self.cursor.close()
-    self.sql_db.close()
+    self.connection.close()
     print("Database connection closed.")
  
   def init_db_excel(self):
