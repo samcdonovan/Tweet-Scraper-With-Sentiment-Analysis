@@ -53,9 +53,10 @@ class TweetDAO():
     cursor = connection.cursor(buffered = True)
     cursor.execute(query)
     tweet_id = cursor.fetchone()
-    if tweet_id is None:
-      tweet_id = 0
-    print(tweet_id)
+    if tweet_id[0] is None:
+      query = "SELECT MAX(id) FROM tweets WHERE company='" + company_name + "' AND timestamp <= '%s'" %(previous_date)
+      cursor.execute(query)
+      tweet_id = cursor.fetchone()
 
     cursor.close()
     connection.close()
