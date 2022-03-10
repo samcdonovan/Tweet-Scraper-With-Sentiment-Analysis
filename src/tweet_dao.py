@@ -1,14 +1,10 @@
 
 from re import S
-import pandas
-import os
+
 import time
-import xlsxwriter
-import openpyxl
-from openpyxl.styles import Font
-import sqlalchemy as sal
+
 from mysql.connector import errorcode
-from sqlalchemy import create_engine
+
 import datetime
 
 import mysql.connector
@@ -16,17 +12,16 @@ import mysql.connector
 
 class TweetDAO():
 
-    def init_db(self):
-        self.new_connection()
-
     def new_connection(self):
         try:
-            self.connection = mysql.connector.connect(
+            connection = mysql.connector.connect(
                 host="localhost",
                 user="root",
                 password="",
                 database='scraped_tweets'
             )
+
+            return connection
 
         except mysql.connector.Error as error:
             if error.errno == errorcode.ER_ACCESS_DENIED_ERROR:
@@ -37,6 +32,8 @@ class TweetDAO():
                 print("Database error: ")
                 print(error)
 
+            return None
+
     def set_cursor(self, cursor):
         self.cursor = cursor
 
@@ -45,12 +42,15 @@ class TweetDAO():
         query = "SELECT " + min_or_max + "(id) FROM tweets WHERE company='" + company_name + \
             "' AND timestamp BETWEEN '%s' and '%s'" % (
                 previous_date, current_date)
+
         connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database='scraped_tweets'
+                host="localhost",
+                user="root",
+                password="",
+                database='scraped_tweets'
         )
+        #connection = self.new_connection()
+
         cursor = connection.cursor(buffered=True)
         cursor.execute(query)
         tweet_id = cursor.fetchone()
@@ -67,11 +67,12 @@ class TweetDAO():
     def get_newest_tweet(self, company_name):
         query = "SELECT MAX(id), MAX(timestamp) FROM tweets WHERE timestamp = (SELECT MAX(timestamp) FROM tweets WHERE company='" + company_name + "')"
 
+        #connection = self.new_connection()
         connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database='scraped_tweets'
+                host="localhost",
+                user="root",
+                password="",
+                database='scraped_tweets'
         )
         cursor = connection.cursor(buffered=True)
 
@@ -99,11 +100,12 @@ class TweetDAO():
         return self.cursor.fetchone()
 
     def add_to_database(self, tweet):
+        #connection = self.new_connection()
         connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database='scraped_tweets'
+                host="localhost",
+                user="root",
+                password="",
+                database='scraped_tweets'
         )
         cursor = connection.cursor(buffered=True)
         check_unique = "SELECT * FROM tweets WHERE id = " + \
