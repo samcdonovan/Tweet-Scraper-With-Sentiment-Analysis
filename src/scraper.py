@@ -1,8 +1,5 @@
 from audioop import mul
 import tweepy
-import string
-import os
-import multiprocessing
 import threading
 import time
 from threading import Thread
@@ -27,9 +24,6 @@ class Scraper():
                              "#" + company_name + " #ClimateChange -filter:retweets", company_name + " #ClimateChange -filter:retweets"]
         self.thread_complete = False
 
-        #self.tweet_dao = tweet_dao
-        # self.search = "#climatechange"
-
     def setup(self, tweet_dao, api, wnl, wordnet, nltk):
         self.tweet_dao = tweet_dao
         self.tweet_dao.set_cursor(
@@ -40,40 +34,20 @@ class Scraper():
         self.nltk = nltk
 
     def run(self):
-        #self.thread = Thread(target = self.heello())
-        # for search_tweet in self.api.search_tweets(q = self.search + " -filter:retweets", lang = "en", count=10):
-        # self.thread.start()
-
+        
         for search in self.search_terms:
 
             time.sleep(5)
             self.search = search
             self.search_tweets = []
             self.get_tweets()
-          
-       # print(self.tweet_dao.get_tweet_id("MAX"))
-        # print(self.tweet_dao.get_tweet_id("MIN"))
-            i = 0
+
+            tweet_number = 0
 
             for search_tweet in self.search_tweets:
-                i += 1
-                print("tweet no.: " + str(i))
+                tweet_number += 1
+                print("Tweet no.: " + str(tweet_number))
                 self.get_tweet_obj(search_tweet)
-
-            # time.sleep(1)
-
-       # num_list = [1, 2, 3, 4]
-        #self.process = multiprocessing.Process(target=heello(range(11)))
-        # self.process.start()
-       # self.pool = multiprocessing.Pool(50)
-        #self.pool.apply_async(heello, range(11))
-        #self.pool.map_async(heello, range(11))
-        # results = [self.pool.apply_async(heello, (num))
-          #          for num in num_list]
-       # roots = [r.get() for r in results]
-        # self.pool.close()
-        # self.pool.terminate()
-        # self.pool.join()
 
     def is_thread_complete(self):
         return self.thread_complete
@@ -83,12 +57,12 @@ class Scraper():
 
     def get_tweets(self):
         today = datetime.datetime.now().replace(
-            hour = 23, minute = 59, second = 59, microsecond = 999999)
+            hour=23, minute=59, second=59, microsecond=999999)
 
         today += datetime.timedelta(1)
-        newest_timestamp = self.tweet_dao.get_newest_tweet(self.company_name)[1]
+        newest_timestamp = self.tweet_dao.get_newest_tweet(self.company_name)[
+            1]
 
-        #if not isinstance(newest_timestamp, datetime.datetime):
         if newest_timestamp is None:
             number_of_days = 7
         else:
@@ -100,32 +74,15 @@ class Scraper():
             "MIN", today, self.company_name)
 
         for day_index in range(number_of_days, -1, -1):
-            #current_day_index = day
+
             current_day_in_week = today - datetime.timedelta(day_index)
-            
-            #print((current_day_in_week - today).days)
-            tweets =self.api.search_tweets(
+
+            tweets = self.api.search_tweets(
                 q=self.search, lang="en", count=self.count, tweet_mode="extended", until=current_day_in_week.date(), since_id=oldest_id)
             self.search_tweets.extend(tweets)
-            #print(str(tweets))
-          #  for tweet in self.search_tweets:
-           #     print(tweet.created_at)
+
             if len(self.search_tweets) > 0:
                 oldest_id = self.search_tweets[0].id
-            # self.search_tweets.clear()
-
-    def get_tweets_old(self):
-        if self.timeline == "new":
-            #oldest_id = self.tweet_dao.get_tweet_id("MAX")
-            # , since_id = oldest_id[0]
-           # print("Newest: " + str(oldest_id[0]))
-            self.search_tweets = self.api.search_tweets(
-                q=self.search, lang="en", count=self.count, tweet_mode="extended")
-        elif self.timeline == "old":
-            newest_id = self.tweet_dao.get_tweet_id("MAX")
-            print("Oldest: " + str(newest_id))
-            self.search_tweets = self.api.search_tweets(
-                q=self.search, lang="en", count=self.count, tweet_mode="extended", since_id=newest_id[0])
 
     def stop(self):
         self.thread.stop()
@@ -136,17 +93,10 @@ class Scraper():
         self.thread = threading.Thread(target=self.run)
         self.thread.start()
 
-      #  print(self.company_name + " thread complete.")
-       # self.thread_complete = True
-
     def get_tweet_obj(self, search_tweet):
-        #wnl = WordNetLemmatizer()
 
-        # for search_tweet in self.api.search_tweets(q = self.search + " -filter:retweets", lang = "en", count=10):
-        # print(f"{tweet.user.name}:{tweet.text}"
-       # print(search_tweet)
         converted_tweet = self.convert_to_list(search_tweet.full_text)
-        # print(converted_tweet)
+
         tagged = self.nltk.pos_tag(converted_tweet)
         wordnet_tagged = list(
             map(lambda x: (x[0], self.pos_tagger(x[1])), tagged))
@@ -161,40 +111,8 @@ class Scraper():
                 lemmatized_sentence.append(self.wnl.lemmatize(word, tag))
         lemmatized_sentence = " ".join(lemmatized_sentence)
 
-        # print(lemmatized_sentence)
-        # print(search_tweet.id)
-       # print(self.search)
-        # print(self.company_name)
         self.tweet_dao.add_to_database(tweet.Tweet(
             search_tweet.id, self.company_name, search_tweet.full_text, lemmatized_sentence, search_tweet.created_at))
-
-    def scrape(self):
-        wnl = WordNetLemmatizer()
-
-        for search_tweet in self.api.search_tweets(q=self.search + " -filter:retweets", lang="en", count=10):
-            # print(f"{tweet.user.name}:{tweet.text}")
-            converted_tweet = self.convert_to_list(search_tweet.text)
-            # print(converted_tweet)
-            tagged = nltk.pos_tag(converted_tweet)
-            wordnet_tagged = list(
-                map(lambda x: (x[0], self.pos_tagger(x[1])), tagged))
-
-            lemmatized_sentence = []
-            for word, tag in wordnet_tagged:
-                if tag is None:
-                    # if there is no available tag, append the token as is
-                    lemmatized_sentence.append(word)
-                else:
-                    # else use the tag to lemmatize the token
-                    lemmatized_sentence.append(wnl.lemmatize(word, tag))
-            lemmatized_sentence = " ".join(lemmatized_sentence)
-
-           # print(lemmatized_sentence)
-            # print(search_tweet.id)
-            print(self.company_name)
-            print(self.search)
-            self.tweet_dao.add_to_database(tweet.Tweet(
-                search_tweet.id, self.company_name, search_tweet.text, lemmatized_sentence, search_tweet.created_at))
 
     def pos_tagger(self, nltk_tag):
         if nltk_tag.startswith('J'):
@@ -264,10 +182,9 @@ class Scraper():
                       "entirely", "exactly", "example", "going", "greetings", "hello", "help", "hopefully", "ignored", "inasmuch", "indicate", "indicated",
                       "indicates", "inner", "insofar", "it'd", "keep", "keeps", "novel", "presumably", "reasonably",
                       "second", "secondly", "sensible", "serious", "seriously", "sure", "t's", "third", "thorough", "thoroughly", "three", "well", "wonder"]
-        #i = 0
+
         for word in sentence.split():
-           # i+=1
-            # print(str(i))
+
             stop_check = bool(False)
             for stop_word in stop_words:
                 if word.lower() in stop_word:
@@ -280,3 +197,52 @@ class Scraper():
                 converted_list.append(word)
 
         return converted_list
+
+    # def get_tweets_old(self):
+     #   if self.timeline == "new":
+
+      #      self.search_tweets = self.api.search_tweets(
+       #         q=self.search, lang="en", count=self.count, tweet_mode="extended")
+        # elif self.timeline == "old":
+        #   newest_id = self.tweet_dao.get_tweet_id("MAX")
+        #  print("Oldest: " + str(newest_id))
+        # self.search_tweets = self.api.search_tweets(
+        #    q=self.search, lang="en", count=self.count, tweet_mode="extended", since_id=newest_id[0])
+
+   # def scrape(self):
+       # wnl = WordNetLemmatizer()
+
+       # for search_tweet in self.api.search_tweets(q=self.search + " -filter:retweets", lang="en", count=10):
+
+        #   converted_tweet = self.convert_to_list(search_tweet.text)
+
+        #    tagged = nltk.pos_tag(converted_tweet)
+        #    wordnet_tagged = list(
+        #       map(lambda x: (x[0], self.pos_tagger(x[1])), tagged))
+
+        #   lemmatized_sentence = []
+        #  for word, tag in wordnet_tagged:
+        #       if tag is None:
+        # if there is no available tag, append the token as is
+        #          lemmatized_sentence.append(word)
+        #      else:
+        # else use the tag to lemmatize the token
+        #         lemmatized_sentence.append(wnl.lemmatize(word, tag))
+        # lemmatized_sentence = " ".join(lemmatized_sentence)
+
+        # print(self.company_name)
+        # print(self.search)
+        # self.tweet_dao.add_to_database(tweet.Tweet(
+        #    search_tweet.id, self.company_name, search_tweet.text, lemmatized_sentence, search_tweet.created_at))
+       # num_list = [1, 2, 3, 4]
+        #self.process = multiprocessing.Process(target=heello(range(11)))
+        # self.process.start()
+       # self.pool = multiprocessing.Pool(50)
+        #self.pool.apply_async(heello, range(11))
+        #self.pool.map_async(heello, range(11))
+        # results = [self.pool.apply_async(heello, (num))
+        #          for num in num_list]
+       # roots = [r.get() for r in results]
+        # self.pool.close()
+        # self.pool.terminate()
+        # self.pool.join()
