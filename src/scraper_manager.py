@@ -1,14 +1,6 @@
-
-#from nltk.stem import WordNetLemmatizer
-#from nltk.corpus import wordnet
 from tweet_dao import TweetDAO
 import tweepy
 import os
-# from textblob import TextBlob, Word
-#import nltk
-#nltk.download('wordnet')
-#nltk.download('omw-1.4')
-#nltk.download('averaged_perceptron_tagger')
 
 
 class ScraperManager():

@@ -2,7 +2,6 @@ import unicodedata
 import sys
 import utility
 
-
 class Tweet:
 
     def __init__(self, unique_id, company, original_tweet, time):
@@ -26,10 +25,10 @@ class Tweet:
         for word, tag in wordnet_tagged:
             if tag is None:
                 # if there is no available tag, append the token as is
-                lemmatized_sentence.append(word)
+                lemmatized_sentence.append(word.lower())
             else:
                 # else use the tag to lemmatize the token
-                lemmatized_sentence.append(self.wnl.lemmatize(word, tag))
+                lemmatized_sentence.append(self.wnl.lemmatize(word, tag).lower())
 
         cleaned_text = " ".join(lemmatized_sentence)
         return cleaned_text
