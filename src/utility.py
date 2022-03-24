@@ -12,6 +12,8 @@ nltk.download('wordnet')
 nltk.download('omw-1.4')
 nltk.download('averaged_perceptron_tagger')
 # nltk.download('stopwords')
+import string
+from string import digits
 
 
 def get_stop_words():
@@ -37,10 +39,10 @@ def clean_and_lemmatize(text):
     for word, tag in wordnet_tagged:
         if tag is None:
             # if there is no available tag, append the token as is
-            lemmatized_sentence.append(word.lower())
+            lemmatized_sentence.append(word)
         else:
             # else use the tag to lemmatize the token
-            lemmatized_sentence.append(wnl.lemmatize(word, tag).lower())
+            lemmatized_sentence.append(wnl.lemmatize(word, tag))
 
     cleaned_text = " ".join(lemmatized_sentence)
     return cleaned_text
@@ -69,25 +71,45 @@ def create_csv():
 
 def convert_to_list(sentence):
     converted_list = []
-    re.sub('[0-9]+', '', sentence)
+    
     re.sub('((www.[^s]+)|(https?://[^s]+))',' ',sentence)
+    english_punctuations = string.punctuation
+    punctuations_list = english_punctuations
 
+    remove_punctuation = str.maketrans('', '', punctuations_list)
+    #re.sub('[0-9]+', '', sentence)
+    remove_digits = str.maketrans('', '', digits)
+    #sentence = sentence.translate(remove_digits)
+    #sentence = sentence.translate(remove_punctuation)
+    regex = re.compile('[@#]')
     for word in sentence.split():
-        
-        stop_check = bool(False)
 
+        #print(regex.search(word))
+        if regex.search(word) != None:
+            continue
+
+        word = word.lower()
+        stop_check = bool(False)
+        word = word.translate(remove_digits)
+        word = word.translate(remove_punctuation)
+        #print(word + " " + str(word in stop_words))
+        word.replace(" ", "")
         if word in stop_words:
             stop_check = True
-
+            continue
+       
         """
         for stop_word in stop_words:
             if word.lower() in stop_word:
                 stop_check = bool(True)
         """
-        if not stop_check and "http" not in word and "@" not in word:
+        #print(word + ";")
+        if not word.isspace() and word:
+            """
             word = word.translate(dict.fromkeys(i for i in range(sys.maxunicode)
                                                 if unicodedata.category(chr(i)).startswith('P')))
-          
+            """
+     
             converted_list.append(word)
 
     return converted_list
