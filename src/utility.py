@@ -81,7 +81,7 @@ def convert_to_list(sentence):
     remove_digits = str.maketrans('', '', digits)
     #sentence = sentence.translate(remove_digits)
     #sentence = sentence.translate(remove_punctuation)
-    regex = re.compile('[@#]')
+    regex = re.compile('[@#]|((www.[^s]+)|(https?://[^s]+))')
     for word in sentence.split():
 
         #print(regex.search(word))
@@ -120,24 +120,43 @@ def tokenize(text):
 
 
 def get_training_data():
-    df = pd.read_csv('./data/sentiment_140_dataset.csv', encoding='ISO-8859-1',
+    df = pd.read_csv('./data/sentiment_140_dataset.csv', encoding='ISO-8859-1', compression=None,
                      names=['target', 'ids', 'date', 'flag', 'user', 'text'])
+    #print(df['target'].unique())
+    #df1 = df.iloc[:1000000, :]
+    #df2 = df.iloc[1000001:,:]
 
+    #print(df2.target.to_string(index =False))
     training_data = df[['text', 'target']]
-
+    #print(df.target.to_string(index=False))
+    #print(df.loc[len(df) - 1])
+    """
     training_data['target'] = training_data['target'].replace(4, 2)
     training_data['target'] = training_data['target'].replace(0, -2)
     training_data['target'] = training_data['target'].replace(2, 1)
-
+    """
+   # training_data.loc[training_data['target'] == 2, 'target'] = 1
+    training_data.loc[training_data['target'] == 4, 'target'] = 2
+    training_data.loc[training_data['target'] == 0, 'target'] = -2
+   
     training_positive = training_data[training_data['target'] == 2]
     training_negative = training_data[training_data['target'] == -2]
-    training_neutral = training_data[training_data['target'] == 1]
+    #training_neutral = df2[df2['target'] == 2]
 
-    training_positive = training_positive.iloc[:int(3333)]
-    training_negative = training_negative.iloc[:int(3333)]
-    training_neutral = training_neutral.iloc[:int(3333)]
+    training_positive = training_positive.iloc[:int(3500)]
+    training_negative = training_negative.iloc[:int(3500)]
+    #training_neutral = training_neutral.iloc[:int(2333)]
+    
+    #training_set = pd.concat([training_neutral])
+    training_set = pd.concat([training_negative, training_positive])
 
-    training_set = pd.concat([training_neutral, training_negative, training_positive])
+    for index, row in training_set.iterrows():
+    
+        training_set.loc[index, 'text'] = clean_and_lemmatize(row['text'])
+   
+    
+    try:
 
-    for i in range(0, len(training_set)):
-        training_set[i]['text'] = clean_and_lemmatize(training_set[i]['text'])
+        training_set.to_csv('./data/training_set.csv',index = False)
+    except Exception as ex:
+        print("Training data error: " + ex)
