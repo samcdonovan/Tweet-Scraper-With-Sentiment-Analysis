@@ -14,8 +14,18 @@ def build_dictionary(dataset):
             else:
                 dict[word] = 2
 
-
     return dict
+
+def prior_probabilities(positive_tweets, negative_tweets):
+
+    total = len(positive_tweets) + len(negative_tweets)
+
+    positive = len(positive_tweets) / total
+    negative = len(negative_tweets) / total
+
+    dict = {"pos": positive , "neg": negative}
+    return dict
+
 
 def get_frequencies():
     positive_tweets = {"very good", "very amazing", "love"}
@@ -59,6 +69,35 @@ def get_frequencies():
         negative_probs[key] = negative_dict[key] / negative_amount
         
     print(negative_probs)
+    priors = prior_probabilities(positive_tweets, negative_tweets)
+    print(priors)
+
+    test_tweets = {"good good", "bad bad", "very bad", "love awful bad", "horrible good"}
+
+    for tweet in test_tweets:
+        current_pos = priors["pos"]
+        current_neg = priors["neg"]
+        for word in tweet.split(" "):
+
+            if word not in positive_dict.keys():
+                positive_dict[word] = 1                
+                pos_probs[word] = 1 / positive_amount
+            if word not in negative_dict.keys():
+                negative_dict[word] = 1                
+                negative_probs[word] = 1 / negative_amount
+
+            current_pos *= pos_probs[word]
+            current_neg *= negative_probs[word]
+
+        if current_pos > current_neg:
+            sentiment = "positive"
+        else:
+            sentiment = "negative"
+
+        print(tweet + " " + sentiment)
+
+
+
 def get_counts(tokenized_text):
     counts = []
 
