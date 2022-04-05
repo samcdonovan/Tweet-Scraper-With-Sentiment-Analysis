@@ -1,16 +1,21 @@
-
+""""
 from tweet import Tweet
 from tweet_dao import TweetDAO
 import scraper
 import scraper_manager
 import utility
+
 dao = TweetDAO()
+"""
+import naive_bayes
+naive_bayes.get_frequencies()
 
 """
 tweetdao = TweetDAO()
 tweetdao.clean_tweets_in_db()
 """
-utility.get_training_data()
+
+#utility.get_training_data()
 
 #utility.create_csv()
 """

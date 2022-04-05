@@ -82,6 +82,16 @@ def convert_to_list(sentence):
     #sentence = sentence.translate(remove_digits)
     #sentence = sentence.translate(remove_punctuation)
     regex = re.compile('[@#]|((www.[^s]+)|(https?://[^s]+))')
+    re.sub(r'[^\w]', '', sentence)
+
+    emoji_pattern = re.compile("["
+        u"\U0001F600-\U0001F64F"  # emoticons
+        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+        u"\U0001F680-\U0001F6FF"  # transport & map symbols
+        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                           "]+", flags=re.UNICODE)
+    emoji_pattern.sub(r'', sentence) 
+
     for word in sentence.split():
 
         #print(regex.search(word))
@@ -94,7 +104,7 @@ def convert_to_list(sentence):
         word = word.translate(remove_punctuation)
         #print(word + " " + str(word in stop_words))
         word.replace(" ", "")
-        if word in stop_words:
+        if "http" in word or word in stop_words:
             stop_check = True
             continue
        
@@ -149,14 +159,21 @@ def get_training_data():
     
     #training_set = pd.concat([training_neutral])
     training_set = pd.concat([training_negative, training_positive])
-
+    hello = training_set.groupby
     for index, row in training_set.iterrows():
     
         training_set.loc[index, 'text'] = clean_and_lemmatize(row['text'])
-   
     
     try:
 
         training_set.to_csv('./data/training_set.csv',index = False)
     except Exception as ex:
         print("Training data error: " + ex)
+
+def sum(array):
+    sum = 0
+
+    for i in range(len(array)):
+        sum += array[i]
+    
+    return sum

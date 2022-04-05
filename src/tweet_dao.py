@@ -151,13 +151,12 @@ class TweetDAO():
 
         check_result = cursor.fetchall()
      
-        #for i in range(0, 5):
         for i in range(0,len(check_result)):
-            #print(check_result[i])
+            
             print(i)
             processed_text = ""
             processed_text = utility.clean_and_lemmatize(check_result[i][2])
-            update_query = "UPDATE tweets SET cleaned_tweet = '%s' WHERE id = '%s'"% (processed_text,   check_result[i][0])
+            update_query = "UPDATE tweets SET cleaned_tweet = '%s' WHERE id = '%s'"% (processed_text, check_result[i][0])
             cursor.execute(update_query)
             connection.commit()
             
