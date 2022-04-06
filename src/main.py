@@ -1,12 +1,13 @@
-""""
+
 from tweet import Tweet
 from tweet_dao import TweetDAO
 import scraper
 import scraper_manager
+dao = TweetDAO()
+
 import utility
 
-dao = TweetDAO()
-"""
+utility.training_and_test_to_csv()
 import naive_bayes
 naive_bayes.get_frequencies()
 
@@ -14,8 +15,6 @@ naive_bayes.get_frequencies()
 tweetdao = TweetDAO()
 tweetdao.clean_tweets_in_db()
 """
-
-#utility.get_training_data()
 
 #utility.create_csv()
 """
@@ -40,7 +39,6 @@ except KeyboardInterrupt:
 
 
 manager.finalise()
-
 """
 
 print("All threads stopped and database connections closed.")

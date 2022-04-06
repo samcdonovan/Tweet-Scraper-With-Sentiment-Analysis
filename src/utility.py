@@ -1,3 +1,5 @@
+from string import digits
+import string
 import pandas as pd
 import re
 from nltk.corpus import stopwords  # Import stopwords from nltk.corpus
@@ -12,8 +14,6 @@ nltk.download('wordnet')
 nltk.download('omw-1.4')
 nltk.download('averaged_perceptron_tagger')
 # nltk.download('stopwords')
-import string
-from string import digits
 
 
 def get_stop_words():
@@ -71,30 +71,32 @@ def create_csv():
 
 def convert_to_list(sentence):
     converted_list = []
-    
-    re.sub('((www.[^s]+)|(https?://[^s]+))',' ',sentence)
+
+    sentence = ''.join(filter(lambda x: x in string.printable, sentence))
+
+    re.sub('((www.[^s]+)|(https?://[^s]+))', ' ', sentence)
     english_punctuations = string.punctuation
     punctuations_list = english_punctuations
 
     remove_punctuation = str.maketrans('', '', punctuations_list)
-    #re.sub('[0-9]+', '', sentence)
+    # re.sub('[0-9]+', '', sentence)
     remove_digits = str.maketrans('', '', digits)
-    #sentence = sentence.translate(remove_digits)
-    #sentence = sentence.translate(remove_punctuation)
+    # sentence = sentence.translate(remove_digits)
+    # sentence = sentence.translate(remove_punctuation)
     regex = re.compile('[@#]|((www.[^s]+)|(https?://[^s]+))')
     re.sub(r'[^\w]', '', sentence)
 
     emoji_pattern = re.compile("["
-        u"\U0001F600-\U0001F64F"  # emoticons
-        u"\U0001F300-\U0001F5FF"  # symbols & pictographs
-        u"\U0001F680-\U0001F6FF"  # transport & map symbols
-        u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
-                           "]+", flags=re.UNICODE)
-    emoji_pattern.sub(r'', sentence) 
+                               u"\U0001F600-\U0001F64F"  # emoticons
+                               u"\U0001F300-\U0001F5FF"  # symbols & pictographs
+                               u"\U0001F680-\U0001F6FF"  # transport & map symbols
+                               u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
+                               "]+", flags=re.UNICODE)
+    emoji_pattern.sub(r'', sentence)
 
     for word in sentence.split():
 
-        #print(regex.search(word))
+        # print(regex.search(word))
         if regex.search(word) != None:
             continue
 
@@ -102,24 +104,25 @@ def convert_to_list(sentence):
         stop_check = bool(False)
         word = word.translate(remove_digits)
         word = word.translate(remove_punctuation)
-        #print(word + " " + str(word in stop_words))
+        # print(word + " " + str(word in stop_words))
         word.replace(" ", "")
-        if "http" in word or word in stop_words:
+        if "http" in word or "htt" in word or len(word) < 3 or word in stop_words:
             stop_check = True
+            # print(word)
             continue
-       
+
         """
         for stop_word in stop_words:
             if word.lower() in stop_word:
                 stop_check = bool(True)
         """
-        #print(word + ";")
+        # print(word + ";")
         if not word.isspace() and word:
             """
             word = word.translate(dict.fromkeys(i for i in range(sys.maxunicode)
                                                 if unicodedata.category(chr(i)).startswith('P')))
             """
-     
+
             converted_list.append(word)
 
     return converted_list
@@ -129,51 +132,156 @@ def tokenize(text):
     return text.split()
 
 
-def get_training_data():
-    df = pd.read_csv('./data/sentiment_140_dataset.csv', encoding='ISO-8859-1', compression=None,
-                     names=['target', 'ids', 'date', 'flag', 'user', 'text'])
-    #print(df['target'].unique())
-    #df1 = df.iloc[:1000000, :]
-    #df2 = df.iloc[1000001:,:]
+def get_train():
 
-    #print(df2.target.to_string(index =False))
+    dataframe = pd.read_csv('./data/training_set.csv', encoding='ISO-8859-1', compression=None)
+    return dataframe
+
+
+def get_test():
+    dataframe = pd.read_csv('./data/test_set.csv', encoding='ISO-8859-1', compression=None)
+    return dataframe
+
+
+def training_and_test_to_csv():
+
+    climate_dataframe = pd.read_csv('./data/sample_data.csv', encoding='ISO-8859-1', compression=None,
+                                    names=['target', 'text', 'id'])
+
+    climate_data = climate_dataframe[['text', 'target']]
+
+    #training_data.loc[training_data['target'] == 0, 'target'] = 3
+    #training_data.loc[training_data['target'] == 2, 'target'] = 3
+    climate_data.loc[climate_data['target'] == 1, 'target'] = 2
+    climate_data.loc[climate_data['target'] == -1, 'target'] = -2
+    #training_data.loc[training_data['target'] == 3, 'target'] = 1
+
+    climate_positive = climate_data[climate_data['target'] == 2]
+    climate_negative = climate_data[climate_data['target'] == -2]
+    #training_neutral = training_data[training_data['target'] == 1]
+
+    training_positive = climate_positive.iloc[:int(6750)]
+    training_negative = climate_negative.iloc[:int(6750)]
+
+    test_positive = climate_positive.iloc[-int(2000):]
+    test_negative = climate_negative.iloc[-int(2000):]
+    #training_neutral = training_neutral.iloc[:int(2333)]
+
+    climate_train = pd.concat([training_negative, training_positive])
+    climate_test = pd.concat([test_negative, test_positive])
+
+
+    """
+    sentiment_140_dataframe = pd.read_csv('./data/sentiment_140_dataset.csv', encoding='ISO-8859-1', compression=None,
+                                          names=['target', 'ids', 'date', 'flag', 'user', 'text'])
+
+    sentiment_140_data = sentiment_140_dataframe[['text', 'target']]
+
+    sentiment_140_data.loc[sentiment_140_data['target'] == 4, 'target'] = 2
+    sentiment_140_data.loc[sentiment_140_data['target'] == 0, 'target'] = -2
+
+    sentiment_140_positive = sentiment_140_data[sentiment_140_data['target'] == 2]
+    sentiment_140_negative = sentiment_140_data[sentiment_140_data['target'] == -2]
+
+    training_positive = sentiment_140_positive.iloc[:int(6750)]
+    training_negative = sentiment_140_negative.iloc[:int(6750)]
+
+    test_positive = sentiment_140_positive.iloc[-int(2000):]
+    test_negative = sentiment_140_negative.iloc[-int(2000):]
+
+    sentiment_140_train = pd.concat([training_negative, training_positive])
+    sentiment_140_test = pd.concat([test_negative, test_positive])
+    """
+    #    training_set = pd.concat([climate_train, sentiment_140_train])
+    #   test_set = pd.concat([climate_test, sentiment_140_test])
+
+    training_set = climate_train
+    test_set = climate_test
+    for index, row in training_set.iterrows():
+
+        training_set.loc[index, 'text'] = clean_and_lemmatize(row['text'])
+
+    for index, row in test_set.iterrows():
+
+        test_set.loc[index, 'text'] = clean_and_lemmatize(row['text'])
+
+    try:
+
+        training_set.to_csv('./data/training_set.csv', index=False)
+        test_set.to_csv('./data/test_set.csv', index=False)
+    except Exception as ex:
+        print("Training data error: " + str(ex))
+
+
+def get_training_data_climate():
+
+    df = pd.read_csv('./data/sample_data.csv', encoding='ISO-8859-1', compression=None,
+                     names=['target', 'text', 'id'])
+
     training_data = df[['text', 'target']]
-    #print(df.target.to_string(index=False))
-    #print(df.loc[len(df) - 1])
-    """
-    training_data['target'] = training_data['target'].replace(4, 2)
-    training_data['target'] = training_data['target'].replace(0, -2)
-    training_data['target'] = training_data['target'].replace(2, 1)
-    """
-   # training_data.loc[training_data['target'] == 2, 'target'] = 1
-    training_data.loc[training_data['target'] == 4, 'target'] = 2
-    training_data.loc[training_data['target'] == 0, 'target'] = -2
-   
+
+    #training_data.loc[training_data['target'] == 0, 'target'] = 3
+    #training_data.loc[training_data['target'] == 2, 'target'] = 3
+    training_data.loc[training_data['target'] == 1, 'target'] = 2
+    training_data.loc[training_data['target'] == -1, 'target'] = -2
+    #training_data.loc[training_data['target'] == 3, 'target'] = 1
+
     training_positive = training_data[training_data['target'] == 2]
     training_negative = training_data[training_data['target'] == -2]
-    #training_neutral = df2[df2['target'] == 2]
+    #training_neutral = training_data[training_data['target'] == 1]
 
     training_positive = training_positive.iloc[:int(3500)]
     training_negative = training_negative.iloc[:int(3500)]
     #training_neutral = training_neutral.iloc[:int(2333)]
-    
-    #training_set = pd.concat([training_neutral])
+
     training_set = pd.concat([training_negative, training_positive])
-    hello = training_set.groupby
+
     for index, row in training_set.iterrows():
-    
+
         training_set.loc[index, 'text'] = clean_and_lemmatize(row['text'])
-    
+
     try:
 
-        training_set.to_csv('./data/training_set.csv',index = False)
+        training_set.to_csv('./data/training_set_2.csv', index=False)
+    except Exception as ex:
+        print("Training data error: " + str(ex))
+
+
+def get_training_data_140():
+    df = pd.read_csv('./data/sample_data.csv', encoding='ISO-8859-1', compression=None,
+                     names=['target', 'ids', 'date', 'flag', 'user', 'text'])
+
+    training_data = df[['text', 'target']]
+
+    training_data.loc[training_data['target'] == 4, 'target'] = 2
+    training_data.loc[training_data['target'] == 0, 'target'] = -2
+
+    training_positive = training_data[training_data['target'] == 2]
+    training_negative = training_data[training_data['target'] == -2]
+
+    training_positive = training_positive.iloc[:int(3500)]
+    training_negative = training_negative.iloc[:int(3500)]
+
+    training_set = pd.concat([training_negative, training_positive])
+
+    for index, row in training_set.iterrows():
+
+        training_set.loc[index, 'text'] = clean_and_lemmatize(row['text'])
+
+    try:
+
+        training_set.to_csv('./data/training_set.csv', index=False)
     except Exception as ex:
         print("Training data error: " + ex)
+
 
 def sum(array):
     sum = 0
 
     for i in range(len(array)):
         sum += array[i]
-    
+
     return sum
+
+def isNaN(number):
+    return number != number
