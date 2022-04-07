@@ -15,9 +15,9 @@ naive_bayes.get_frequencies()
 tweetdao = TweetDAO()
 tweetdao.clean_tweets_in_db()
 """
-
-#utility.create_csv()
 """
+#utility.create_csv()
+
 scraper_amazon = scraper.Scraper("amazon")
 scraper_facebook = scraper.Scraper("facebook")
 scraper_netflix = scraper.Scraper("netflix")
@@ -39,8 +39,8 @@ except KeyboardInterrupt:
 
 
 manager.finalise()
-"""
 
+"""
 print("All threads stopped and database connections closed.")
 print("--------------------------")
 

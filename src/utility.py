@@ -104,6 +104,7 @@ def convert_to_list(sentence):
         stop_check = bool(False)
         word = word.translate(remove_digits)
         word = word.translate(remove_punctuation)
+        emoji_pattern.sub(r'', word)
         # print(word + " " + str(word in stop_words))
         word.replace(" ", "")
         if "http" in word or "htt" in word or len(word) < 3 or word in stop_words:
@@ -160,8 +161,8 @@ def training_and_test_to_csv():
     climate_negative = climate_data[climate_data['target'] == -2]
     #training_neutral = training_data[training_data['target'] == 1]
 
-    training_positive = climate_positive.iloc[:int(6750)]
-    training_negative = climate_negative.iloc[:int(6750)]
+    training_positive = climate_positive.iloc[:int(10000)]
+    training_negative = climate_negative.iloc[:int(10000)]
 
     test_positive = climate_positive.iloc[-int(2000):]
     test_negative = climate_negative.iloc[-int(2000):]

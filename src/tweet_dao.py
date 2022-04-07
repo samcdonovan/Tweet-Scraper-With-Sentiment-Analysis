@@ -42,10 +42,10 @@ class TweetDAO():
                 previous_date, current_date)
 
         connection = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="",
-                database='scraped_tweets'
+            host="localhost",
+            user="root",
+            password="",
+            database='scraped_tweets'
         )
         #connection = self.new_connection()
 
@@ -67,10 +67,10 @@ class TweetDAO():
 
         #connection = self.new_connection()
         connection = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="",
-                database='scraped_tweets'
+            host="localhost",
+            user="root",
+            password="",
+            database='scraped_tweets'
         )
         cursor = connection.cursor(buffered=True)
 
@@ -100,10 +100,10 @@ class TweetDAO():
     def add_to_database(self, tweet):
         #connection = self.new_connection()
         connection = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                password="",
-                database='scraped_tweets'
+            host="localhost",
+            user="root",
+            password="",
+            database='scraped_tweets'
         )
 
         cursor = connection.cursor(buffered=True)
@@ -139,24 +139,53 @@ class TweetDAO():
     def clean_tweets_in_db(self):
         query = "SELECT * FROM tweets"
         connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database='scraped_tweets'
+        )
+
+        cursor = connection.cursor(buffered=True)
+
+        cursor.execute(query)
+
+        check_result = cursor.fetchall()
+
+        for pos in range(0, len(check_result)):
+            exception = False
+          
+            connection = mysql.connector.connect(
                 host="localhost",
                 user="root",
                 password="",
                 database='scraped_tweets'
-        )
+            )
 
-        cursor = connection.cursor(buffered=True)
-       
-        cursor.execute(query)
+            cursor = connection.cursor(buffered=True)
 
-        check_result = cursor.fetchall()
-     
-        for i in range(0,len(check_result)):
-            
-            print(i)
+            if pos == len(check_result):
+                print("DB clean finished")
+
             processed_text = ""
-            processed_text = utility.clean_and_lemmatize(check_result[i][2])
-            update_query = "UPDATE tweets SET cleaned_tweet = '%s' WHERE id = '%s'"% (processed_text, check_result[i][0])
-            cursor.execute(update_query)
-            connection.commit()
-            
+            processed_text = utility.clean_and_lemmatize(check_result[pos][2])
+            """
+            if i == 3031 or i == 3076 or i == 3200 or i == 3377:
+                print(check_result[i])
+                print(processed_text)
+                continue
+           # print(str(i) + " " +
+              #    str(check_result[i][0]) + " " + processed_text)
+            """
+            update_query = "UPDATE tweets SET cleaned_tweet = '%s' WHERE id = '%s'" % (
+                processed_text, check_result[pos][0])
+
+            try:
+                cursor.execute(update_query)
+            except Exception as ex:
+               
+                print("Query : " + update_query)
+                print("Exception with " + str(pos) + " : " + str(ex))
+                exception = True
+
+            if not exception:
+                connection.commit()
