@@ -1,8 +1,8 @@
 import math
 import utility
 
-positive_dict = []
-negative_dict = []
+positive_dict = {}
+negative_dict = {}
 
 def build_dictionary(dataset):
     dict = {}
@@ -69,7 +69,7 @@ def get_frequencies():
             negative_dict[key] = 1
     """
     train()
-    
+
     positive_amount = 0
 
     for value in positive_dict.values():
