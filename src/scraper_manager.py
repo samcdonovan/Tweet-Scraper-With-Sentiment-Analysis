@@ -19,7 +19,6 @@ class ScraperManager():
 
         api = tweepy.API(auth)
        
-
         try:
             api.verify_credentials()
             print("Authentication OK")

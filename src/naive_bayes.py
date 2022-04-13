@@ -1,13 +1,12 @@
-
 import math
-
 import utility
 
-    
+positive_dict = []
+negative_dict = []
+
 def build_dictionary(dataset):
     dict = {}
-
-    #for tweet in dataset:
+ 
     for index, row in dataset.iterrows():
       
         if not isinstance(row['text'], str):
@@ -31,10 +30,7 @@ def prior_probabilities(positive_tweets, negative_tweets):
     dict = {"pos": positive , "neg": negative}
     return dict
 
-
-def get_frequencies():
-    #positive_tweets = {"very good", "very amazing", "love"}
-    # negative_tweets = {"very bad", "very awful", "very hate"}
+def train():
     train_tweets = utility.get_train()
 
     positive_tweets = train_tweets[train_tweets['target'] == 2]
@@ -51,6 +47,29 @@ def get_frequencies():
         if key not in negative_dict:
             negative_dict[key] = 1
 
+
+def get_frequencies():
+    #positive_tweets = {"very good", "very amazing", "love"}
+    # negative_tweets = {"very bad", "very awful", "very hate"}
+    """
+    train_tweets = utility.get_train()
+
+    positive_tweets = train_tweets[train_tweets['target'] == 2]
+    negative_tweets = train_tweets[train_tweets['target'] == -2]
+   
+    positive_dict = build_dictionary(positive_tweets)   
+    negative_dict = build_dictionary(negative_tweets)   
+
+    for key in negative_dict.keys():
+        if key not in positive_dict:
+            positive_dict[key] = 1
+
+    for key in positive_dict.keys():
+        if key not in negative_dict:
+            negative_dict[key] = 1
+    """
+    train()
+    
     positive_amount = 0
 
     for value in positive_dict.values():
@@ -109,8 +128,6 @@ def get_frequencies():
         if sentiment == row['target']:
             correct_sum += 1
         
-        #print(row['text'] + ", target =  " + row['target'] + ", predicted = " + sentiment )
-
     print(str(correct_sum) + "/" + str(len(test_tweets) - missing) + " = " + str((correct_sum/(len(test_tweets) - missing))))
 
 

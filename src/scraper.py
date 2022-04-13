@@ -78,8 +78,10 @@ class Scraper():
 
             try:
                 tweets = self.api.search_tweets(
-                    q=self.search, lang="en", count=self.count, tweet_mode="extended", until=current_day_in_week.date(), since_id=oldest_id)
-                self.search_tweets.extend(tweets)
+                    q=self.search, lang="en", count=self.count, tweet_mode="extended",
+                    until=current_day_in_week.date(), since_id=oldest_id)
+                    
+                self.search_tweets.extend(tweets) # extend search_tweets by adding the retrieved Tweets
             except:
                 continue
 
