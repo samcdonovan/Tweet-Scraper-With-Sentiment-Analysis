@@ -149,55 +149,52 @@ def training_and_test_to_csv():
     climate_dataframe = pd.read_csv('./data/sample_data.csv', encoding='ISO-8859-1', compression=None,
                                     names=['target', 'text', 'id'])
 
-    climate_data = climate_dataframe[['text', 'target']]
+    climate_data = climate_dataframe[['text', 'target']]    
 
-    #training_data.loc[training_data['target'] == 0, 'target'] = 3
-    #training_data.loc[training_data['target'] == 2, 'target'] = 3
     climate_data.loc[climate_data['target'] == 1, 'target'] = 2
     climate_data.loc[climate_data['target'] == -1, 'target'] = -2
-    #training_data.loc[training_data['target'] == 3, 'target'] = 1
 
     climate_positive = climate_data[climate_data['target'] == 2]
     climate_negative = climate_data[climate_data['target'] == -2]
+   
     #training_neutral = training_data[training_data['target'] == 1]
 
     training_positive = climate_positive.iloc[:int(10000)]
     training_negative = climate_negative.iloc[:int(10000)]
-
+    
     test_positive = climate_positive.iloc[-int(2000):]
-    test_negative = climate_negative.iloc[-int(2000):]
+    #test_negative = climate_negative.iloc[-int(2000):]
     #training_neutral = training_neutral.iloc[:int(2333)]
-
-    climate_train = pd.concat([training_negative, training_positive])
-    climate_test = pd.concat([test_negative, test_positive])
-
-
-    """
+    
     sentiment_140_dataframe = pd.read_csv('./data/sentiment_140_dataset.csv', encoding='ISO-8859-1', compression=None,
                                           names=['target', 'ids', 'date', 'flag', 'user', 'text'])
 
     sentiment_140_data = sentiment_140_dataframe[['text', 'target']]
 
-    sentiment_140_data.loc[sentiment_140_data['target'] == 4, 'target'] = 2
+    #sentiment_140_data.loc[sentiment_140_data['target'] == 4, 'target'] = 2
     sentiment_140_data.loc[sentiment_140_data['target'] == 0, 'target'] = -2
 
-    sentiment_140_positive = sentiment_140_data[sentiment_140_data['target'] == 2]
+    #sentiment_140_positive = sentiment_140_data[sentiment_140_data['target'] == 2]
     sentiment_140_negative = sentiment_140_data[sentiment_140_data['target'] == -2]
 
-    training_positive = sentiment_140_positive.iloc[:int(6750)]
-    training_negative = sentiment_140_negative.iloc[:int(6750)]
+   # training_positive = sentiment_140_positive.iloc[:int(6750)]
+    """
+    training_climate = climate_negative.iloc[:int(4000)]
+    training_140 =  sentiment_140_negative.iloc[:int(6000)]
+    training_negative = pd.concat(training_climate,training_140)
+    """
+    training_negative = pd.concat([climate_negative.iloc[:int(4000)],
+    sentiment_140_negative.iloc[:int(6000)]])
 
-    test_positive = sentiment_140_positive.iloc[-int(2000):]
+    #test_positive = sentiment_140_positive.iloc[-int(2000):]
     test_negative = sentiment_140_negative.iloc[-int(2000):]
 
-    sentiment_140_train = pd.concat([training_negative, training_positive])
-    sentiment_140_test = pd.concat([test_negative, test_positive])
-    """
-    #    training_set = pd.concat([climate_train, sentiment_140_train])
-    #   test_set = pd.concat([climate_test, sentiment_140_test])
+    climate_train = pd.concat([training_negative, training_positive])
+    climate_test = pd.concat([test_negative, test_positive])
 
     training_set = climate_train
     test_set = climate_test
+
     for index, row in training_set.iterrows():
 
         training_set.loc[index, 'text'] = clean_and_lemmatize(row['text'])
@@ -210,6 +207,7 @@ def training_and_test_to_csv():
 
         training_set.to_csv('./data/training_set.csv', index=False)
         test_set.to_csv('./data/test_set.csv', index=False)
+
     except Exception as ex:
         print("Training data error: " + str(ex))
 
