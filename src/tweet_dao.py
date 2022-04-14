@@ -130,6 +130,65 @@ class TweetDAO():
         cursor.close()
         connection.close()
 
+    def get_all_tweets(self):
+        connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database='scraped_tweets'
+        )
+        
+        cursor = connection.cursor(buffered=True)
+
+        query = "SELECT * FROM tweets"
+        
+        cursor.execute(query)
+        connection.commit()
+     
+        tweets = cursor.fetchall()
+        cursor.close()
+        connection.close()
+    
+        return tweets
+
+    def add_sentiment_values(self, company_name, num_positive, num_negative):
+        connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database='scraped_tweets'
+        )
+        cursor = connection.cursor(buffered=True)
+
+        check_unique = "SELECT * FROM sentiment_results WHERE company = '" + company_name + "'" 
+        cursor.execute(check_unique)
+
+        check_result = cursor.fetchall()
+
+        if len(check_result) > 0:
+            query = "UPDATE sentiment_results SET num_positive = '%s', num_negative = '%s' WHERE company = '%s'" % (
+                num_positive, num_negative, company_name)
+
+
+            cursor = connection.cursor(buffered=True)
+            cursor.execute(query)
+
+
+        else:
+            query = ("INSERT INTO sentiment_results "
+                "(num_positive, num_negative, company)"
+                "VALUES (%s, %s, %s)")
+
+            cursor = connection.cursor(buffered=True)
+            sentiment_data = (company_name, num_positive, num_negative)
+
+            cursor.execute(query, sentiment_data)
+
+        connection.commit()
+        cursor.close()
+        connection.close()
+
+
     def close_connection(self):
 
         self.cursor.close()

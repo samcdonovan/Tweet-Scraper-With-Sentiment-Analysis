@@ -9,7 +9,8 @@ import utility
 
 utility.training_and_test_to_csv()
 import naive_bayes
-naive_bayes.get_frequencies()
+#naive_bayes.get_frequencies()
+naive_bayes.run_naive_bayes()
 """
 tweetdao = TweetDAO()
 tweetdao.clean_tweets_in_db()

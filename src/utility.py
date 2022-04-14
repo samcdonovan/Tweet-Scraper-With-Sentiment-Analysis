@@ -132,7 +132,6 @@ def convert_to_list(sentence):
 def tokenize(text):
     return text.split()
 
-
 def get_train():
 
     dataframe = pd.read_csv('./data/training_set.csv', encoding='ISO-8859-1', compression=None)
