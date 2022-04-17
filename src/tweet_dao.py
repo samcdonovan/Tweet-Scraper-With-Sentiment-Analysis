@@ -6,7 +6,7 @@ from mysql.connector import errorcode
 import datetime
 import mysql.connector
 import utility
-
+import json
 
 class TweetDAO():
 
@@ -137,21 +137,21 @@ class TweetDAO():
             password="",
             database='scraped_tweets'
         )
-        
+
         cursor = connection.cursor(buffered=True)
 
-        query = "SELECT * FROM tweets"
-        
+        query = "SELECT * FROM tweets ORDER BY timestamp ASC"
+
         cursor.execute(query)
         connection.commit()
-     
+
         tweets = cursor.fetchall()
         cursor.close()
         connection.close()
-    
+
         return tweets
 
-    def add_sentiment_values(self, company_name, num_positive, num_negative):
+    def add_sentiment_values(self, company_name, num_positive, num_negative, sentiment_values):
         connection = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -160,27 +160,28 @@ class TweetDAO():
         )
         cursor = connection.cursor(buffered=True)
 
-        check_unique = "SELECT * FROM sentiment_results WHERE company = '" + company_name + "'" 
+        check_unique = "SELECT * FROM sentiment_results WHERE company = '" + company_name + "'"
         cursor.execute(check_unique)
 
         check_result = cursor.fetchall()
 
         if len(check_result) > 0:
-            query = "UPDATE sentiment_results SET num_positive = '%s', num_negative = '%s' WHERE company = '%s'" % (
-                num_positive, num_negative, company_name)
-
+                     # query = "UPDATE sentiment_results SET num_positive = '%s', num_negative = '%s' WHERE company = '%s'" % (
+               # num_positive, num_negative, company_name)
+            
+            query = "UPDATE sentiment_results SET num_positive = '%s', num_negative = '%s', sentiment_values = '%s' WHERE company = '%s'" % (
+                num_positive, num_negative, sentiment_values, company_name)
 
             cursor = connection.cursor(buffered=True)
             cursor.execute(query)
 
-
         else:
             query = ("INSERT INTO sentiment_results "
-                "(num_positive, num_negative, company)"
-                "VALUES (%s, %s, %s)")
+                     "(num_positive, num_negative, company, sentiment_values)"
+                     "VALUES (%s, %s, %s, %s)")
 
             cursor = connection.cursor(buffered=True)
-            sentiment_data = (company_name, num_positive, num_negative)
+            sentiment_data = (num_positive, num_negative, company_name, sentiment_values)
 
             cursor.execute(query, sentiment_data)
 
@@ -188,6 +189,26 @@ class TweetDAO():
         cursor.close()
         connection.close()
 
+    def get_sentiment_values(self):
+        connection = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            password="",
+            database='scraped_tweets'
+        )
+
+        cursor = connection.cursor(buffered=True)
+
+        query = "SELECT * FROM sentiment_results"
+
+        cursor.execute(query)
+        connection.commit()
+
+        sentiment_results = cursor.fetchall()
+        cursor.close()
+        connection.close()
+
+        return sentiment_results
 
     def close_connection(self):
 
@@ -212,7 +233,7 @@ class TweetDAO():
 
         for pos in range(0, len(check_result)):
             exception = False
-          
+
             connection = mysql.connector.connect(
                 host="localhost",
                 user="root",
@@ -241,7 +262,7 @@ class TweetDAO():
             try:
                 cursor.execute(update_query)
             except Exception as ex:
-               
+
                 print("Query : " + update_query)
                 print("Exception with " + str(pos) + " : " + str(ex))
                 exception = True

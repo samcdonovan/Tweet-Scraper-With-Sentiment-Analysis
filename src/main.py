@@ -3,19 +3,26 @@ from tweet import Tweet
 from tweet_dao import TweetDAO
 import scraper
 import scraper_manager
+import naive_bayes
 dao = TweetDAO()
 
 import utility
 
-utility.training_and_test_to_csv()
-import naive_bayes
+#utility.training_and_test_to_csv()
+#utility.training_csv()
+#naive_bayes.cross_valdation()
+#naive_bayes.run_scikit()
 #naive_bayes.get_frequencies()
-naive_bayes.run_naive_bayes()
+
 """
 tweetdao = TweetDAO()
 tweetdao.clean_tweets_in_db()
 """
 
+#naive_bayes.run_naive_bayes()
+utility.plot_word_clouds()
+#utility.plot_pie_charts()
+#naive_bayes.run_scikit()
 #utility.create_csv()
 """
 scraper_amazon = scraper.Scraper("amazon")
@@ -38,7 +45,10 @@ except KeyboardInterrupt:
     print("Aborting program...")
 
 manager.finalise()
+
+naive_bayes.run_naive_bayes()
 """
+
 print("All threads stopped and database connections closed.")
 print("--------------------------")
 
