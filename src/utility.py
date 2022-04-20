@@ -29,36 +29,48 @@ nltk.download('averaged_perceptron_tagger')
 py.tools.set_credentials_file(
     username='samcdonovan', api_key='KeNXeNkDds8Ns0b85fni')
 
+
 def plot_word_clouds():
     word_cloud = naive_bayes.get_word_clouds()
+
     wordcloud = WordCloud()
-    wordcloud.generate_from_frequencies(frequencies=word_cloud["positive"])
+
+    #wordcloud.generate_from_frequencies(frequencies=word_cloud["positive_unseen"])
+    #wordcloud.generate_from_frequencies(frequencies=word_cloud["positive_train"])
+
+    #wordcloud.generate_from_frequencies(frequencies=word_cloud["negative_unseen"])
+    wordcloud.generate_from_frequencies(frequencies=word_cloud["negative_train"])
+    
     plt.figure()
     plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
     plt.show()
+
 
 def plot_pie_charts():
 
     sentiment_values = TweetDAO().get_sentiment_values()
     labels = ["Positive", "Negative"]
 
-    """
-    pie_chart = make_subplots(rows=2, cols=2, specs=[[{'type': 'domain'}, {
-                        'type': 'domain'}], [{'type': 'domain'}, {'type': 'domain'}]])
+    pie_chart = make_subplots(rows=2, cols=3, specs=[[{'type': 'domain'}, {
+        'type': 'domain'},  {'type': 'domain'}], [{'type': 'domain'}, {'type': 'domain'}, {'type': 'domain'}]])
 
-    print(sentiment_values)
+    colours = ['rgb(144,238,144)','rgb(255,69,0)' ]
 
-    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[1][1], sentiment_values[1][2]], name=sentiment_values[1][0]),
-                  1, 1)
+    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[1][1], sentiment_values[1][2]], name=sentiment_values[1][0], marker_colors=colours),
+                        1, 1)
     pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[0][1], sentiment_values[0][2]], name=sentiment_values[0][0]),
-                  1, 2)
+                        1, 2)
     pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[3][1], sentiment_values[3][2]], name=sentiment_values[3][0]),
-                  2, 1)
+                        2, 1)
     pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[2][1], sentiment_values[2][2]], name=sentiment_values[2][0]),
-                  2, 2)
+                        2, 2)
 
-    pie_chart.update_traces(hole=.3, hoverinfo="label+percent+name")
+    total_negative = sentiment_values[1][1] + sentiment_values[0][1] + sentiment_values[3][1] + sentiment_values[2][1]
+    total_positive = sentiment_values[1][2] + sentiment_values[0][2] + sentiment_values[3][2] + sentiment_values[2][2]
+    pie_chart.add_trace(go.Pie(labels=labels, values=[total_negative, total_positive], name="Total"),
+                        1, 3)
+    pie_chart.update_traces(hoverinfo="label+percent+name", textfont_size=20, textinfo="percent+value",marker=dict(line=dict(color='#000000', width=1)))
 
     pie_chart.update_layout(
         title_text="<b>F.A.N.G companies' Twitter sentiment</b>",
@@ -66,24 +78,58 @@ def plot_pie_charts():
         title_font_size=30,
         title_font_family='Arial',
 
-        annotations=[dict(text='<b>Facebook</b>', x=0.20, y=0.80, font_size=11, showarrow=False),
-                     dict(text='<b>Amazon</b>', x=0.8, y=0.805,
+        annotations=[dict(text='<b>Facebook</b>', x=0.125, y=1.05, font_size=11, showarrow=False),
+                     dict(text='<b>Amazon</b>', x=0.5, y=1.05,
                           font_size=12, showarrow=False),
-                     dict(text='<b>Netflix</b>', x=0.205, y=0.2,
+                     dict(text='<b>Netflix</b>', x=0.125, y=0.45,
                           font_size=12, showarrow=False),
-                     dict(text='<b>Google</b>', x=0.795, y=0.2, font_size=12, showarrow=False)])
-    pie_chart.show()
-    """
+                     dict(text='<b>Google</b>', x=0.5, y=0.45, font_size=12, showarrow=False),
+                     dict(text='<b>All Tweets</b>', x=0.885, y=1.05, font_size=12, showarrow=False)])
+    #fig.update_traces(hoverinfo='label+percent', textinfo='value', textfont_size=20,
+            #      marker=dict(colors=colors, line=dict(color='#000000', width=2)))
 
+    pie_chart.show()
+
+def plot_line_chart():
+    
+    sentiment_values = TweetDAO().get_sentiment_values()
+    sentiment_values = TweetDAO().get_sentiment_values()
     positive = {}
     negative = {}
     labels = ["Positive", "Negative"]
 
+    for index in range(0, 4):
+        fig = go.Figure()
+        fig = make_subplots(rows=1, cols=2)
+        json_sentiment = eval(sentiment_values[index][3])
+
+        for key in json_sentiment.keys():
+
+            positive[key] = json_sentiment[key]["positive"]
+            negative[key] = json_sentiment[key]["negative"]
+
+
+        # Add traces
+        fig.add_trace(go.Scatter(x=list(positive.keys()), y=list(positive.values()),
+                            mode='lines',
+                            name='Positive'), 1, 1)
+        fig.add_trace(go.Scatter(x=list(negative.keys()), y=list(negative.values()),
+                            mode='lines',
+                            name='Negative'), 1, 2)
+
+        fig.show()
+
+def plot_stacked_area():
+
+    sentiment_values = TweetDAO().get_sentiment_values()
+    positive = {}
+    negative = {}
+    labels = ["Positive", "Negative"]
 
     for index in range(0, 4):
 
         stacked_area = go.Figure()
-        #print(sentiment_values[index][3])
+        # print(sentiment_values[index][3])
         #json_sentiment = json.loads(r"".format(sentiment_values[index][3]))
        # print(eval(sentiment_values[index][3]))
         json_sentiment = eval(sentiment_values[index][3])
@@ -92,13 +138,13 @@ def plot_pie_charts():
 
             positive[key] = json_sentiment[key]["positive"]
             negative[key] = json_sentiment[key]["negative"]
-        
+
         stacked_area.add_trace(go.Scatter(
             x=list(positive.keys()), y=list(positive.values()),
             hoverinfo='x+y',
-            mode='lines+markers',
+            mode='lines',
             line=dict(color='rgb(0,255,0)')
-            #stackgroup='one' # define stack group
+            # stackgroup='one' # define stack group
         ))
 
         stacked_area.add_trace(go.Scatter(
@@ -106,17 +152,17 @@ def plot_pie_charts():
             hoverinfo='x+y',
             mode='lines',
             line=dict(width=1, color='rgb(220, 20, 60)'),
-            #stackgroup='one'
+            # stackgroup='one'
         ))
-        
+
         stacked_area.update_layout(
             showlegend=True,
             xaxis_type='category',
-            #yaxis=dict(
+            # yaxis=dict(
             #    type='linear',
             #    range=[1, 100],
             #    ticksuffix='%'
-            #)
+            # )
         )
 
         #stacked_area.update_layout(yaxis_range=(0, 100))
@@ -278,8 +324,8 @@ def training_csv():
     sentiment_140_negative = sentiment_140_data[sentiment_140_data['target'] == -2]
 
   #  training_negative = pd.concat([climate_negative.iloc[:int(4000)], sentiment_140_negative.iloc[:int(6500)],
-                    #              sentiment_140_negative.iloc[-int(6500):]])
-    training_negative = pd.concat([climate_negative.iloc[:int(4000)], 
+    #              sentiment_140_negative.iloc[-int(6500):]])
+    training_negative = pd.concat([climate_negative.iloc[:int(4000)],
                                   sentiment_140_negative.iloc[-int(4000):]])
     #test_negative = sentiment_140_negative.iloc[-int(5000):]
 
@@ -290,7 +336,7 @@ def training_csv():
     training_set = climate_train
     test_set = climate_test
     dataset = pd.concat([training_set, test_set])
-    """ 
+    """
     dataset = climate_train
 
     for index, row in dataset.iterrows():
@@ -303,6 +349,7 @@ def training_csv():
     except Exception as ex:
         print("Training data error: " + str(ex))
 
+
 def get_folds():
     dataframe = pd.read_csv('./data/training_data.csv',
                             encoding='ISO-8859-1', compression=None)
@@ -310,33 +357,36 @@ def get_folds():
     dataframe = dataframe.sample(frac=1)
     positive_set = dataframe[dataframe['target'] == 2]
     negative_set = dataframe[dataframe['target'] == -2]
-   
+
     fold_data = {}
 
     for index in range(0, 5):
-        fold_name = "fold-"+ str(index)
+        fold_name = "fold-" + str(index)
         fold_data[fold_name] = {}
-      
+
         start_index = index * 1000
         end_index = start_index + 4000
-        #print(start_index)
-        #print(end_index)
-        #print(len(positive_set))
-        training_positive = pd.concat([positive_set.iloc[0:start_index], positive_set.iloc[(end_index+1):]])
-        
-        training_negative = pd.concat([negative_set.iloc[0:start_index], negative_set.iloc[(end_index+1):]])
+        # print(start_index)
+        # print(end_index)
+        # print(len(positive_set))
+        training_positive = pd.concat(
+            [positive_set.iloc[0:start_index], positive_set.iloc[(end_index+1):]])
+
+        training_negative = pd.concat(
+            [negative_set.iloc[0:start_index], negative_set.iloc[(end_index+1):]])
         #print(positive_set.iloc[start_index + 1:end_index])
-        #print(positive_set.iloc[20000:25000])
+        # print(positive_set.iloc[20000:25000])
         training_set = pd.concat([training_positive, training_negative])
-        #print(training_set) 
-        test_set = pd.concat([positive_set.iloc[(start_index + 1):end_index], 
-                            negative_set.iloc[(start_index + 1):end_index]])
-        #print(test_set)
+        # print(training_set)
+        test_set = pd.concat([positive_set.iloc[(start_index + 1):end_index],
+                              negative_set.iloc[(start_index + 1):end_index]])
+        # print(test_set)
         fold_data[fold_name]["training"] = training_set
         fold_data[fold_name]["test"] = test_set
 
     return fold_data
    # print(fold_data)
+
 
 def training_and_test_to_csv():
 

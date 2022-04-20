@@ -22,6 +22,8 @@ tweetdao.clean_tweets_in_db()
 #naive_bayes.run_naive_bayes()
 utility.plot_word_clouds()
 #utility.plot_pie_charts()
+#utility.plot_stacked_area()
+#utility.plot_line_chart()
 #naive_bayes.run_scikit()
 #utility.create_csv()
 """
@@ -48,7 +50,6 @@ manager.finalise()
 
 naive_bayes.run_naive_bayes()
 """
-
 print("All threads stopped and database connections closed.")
 print("--------------------------")
 

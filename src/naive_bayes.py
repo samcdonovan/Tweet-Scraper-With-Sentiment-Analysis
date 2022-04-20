@@ -328,23 +328,18 @@ def run_naive_bayes():
 
         if current_positive > current_negative:
             positive_predictions[row[1]] += 1
+            
         else:
             negative_predictions[row[1]] += 1
         
         #sentiment_values[row[1]][str(row[4])] = {}
         sentiment_values[row[1]][index] = {}
-        #sentiment_values[row[1]][str(row[4])]["positive"] = current_positive / (current_positive + current_negative)
-        #sentiment_values[row[1]][str(row[4])]["negative"] = current_negative / (current_positive + current_negative)
 
         sentiment_json = {'positive':  (current_positive / (current_positive + current_negative)), 'negative': + (current_negative / (current_positive + current_negative))}
-
-        """
-        sentiment_json = "{'positive':  "+str(current_positive / (current_positive + current_negative)) +",  'negative': "+ str(current_negative / (current_positive + current_negative)) +"}"
-        """
+        #sentiment_json = {'positive': current_positive, 'negative': current_negative}
 
         sentiment_values[row[1]][index] = sentiment_json
-        if row[1] == "google":
-            print(sentiment_values[row[1]][index]) 
+     
         index += 1
 
     for company in company_names:
@@ -352,20 +347,74 @@ def run_naive_bayes():
             company, positive_predictions[company], negative_predictions[company], json.dumps(sentiment_values[company]))
     
 def get_word_clouds():
+    dao = TweetDAO()
 
     train(utility.get_train())
-    word_cloud = {"positive":{}, "negative": {}}
-    for word in sorted(positive_dict, key=positive_dict.get, reverse=True):
-        if word =="climate" or word=="change":
+
+    get_conditional_probabilities()
+
+    db_tweets = dao.get_all_tweets()
+
+    missing = 0
+    company_names = ['amazon', 'facebook', 'netflix', 'google']
+    positive_predictions = {}
+    negative_predictions = {}
+    sentiment_values = {}
+
+    for company in company_names:
+        positive_predictions[company] = 0
+        negative_predictions[company] = 0
+        sentiment_values[company] = {}
+
+    bag_of_words = {"positive_train":{}, "negative_train": {}, "positive_unseen": {}, "negative_unseen": {}}
+
+    for row in db_tweets:
+        current_positive = prior_probs["pos"]
+        current_negative = prior_probs["neg"]
+
+        if not isinstance(row[3], str):
+            missing += 1
             continue
-        word_cloud["positive"][word] = positive_dict[word]
+
+        for word in row[3].split(" "):
+            laplace_smoothing(word)
+
+            current_positive *= positive_probs[word]
+            current_negative *= negative_probs[word]
+
+        if current_positive > current_negative:
+            positive_predictions[row[1]] += 1
+            for word in row[3].split(" "):
+                if word =="climate" or word=="change" or word=="global":
+                    continue
+
+                if word not in bag_of_words["positive_unseen"].keys():
+                    bag_of_words["positive_unseen"][word] = 0
+                    
+                bag_of_words["positive_unseen"][word] += 1
+            
+        else:
+            negative_predictions[row[1]] += 1
+            for word in row[3].split(" "):
+                if word =="climate" or word=="change" or word=="global":
+                    continue
+
+                if word not in bag_of_words["negative_unseen"].keys():
+                    bag_of_words["negative_unseen"][word] = 0
+
+                bag_of_words["negative_unseen"][word] += 1
+
+    for word in sorted(positive_dict, key=positive_dict.get, reverse=True):
+        if word == "climate" or word == "change" or word == "global":
+            continue
+        bag_of_words["positive_train"][word] = positive_dict[word]
 
     for word in sorted(negative_dict, key=negative_dict.get, reverse=True):
-        if word =="climate" or word=="change":
+        if word =="climate" or word=="change" or word=="global":
             continue
-        word_cloud["negative"][word] = negative_dict[word]
+        bag_of_words["negative_train"][word] = negative_dict[word]
 
-    return word_cloud
+    return bag_of_words
 
 def run_scikit():
     #train_tweets = utility.get_train()
