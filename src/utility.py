@@ -19,7 +19,7 @@ import unicodedata
 from nltk.stem import WordNetLemmatizer
 from nltk.corpus import wordnet
 from regex import P
-from tweet_dao import TweetDAO
+from data_access_object import DAO
 wordnet.ensure_loaded()
 nltk.download('wordnet')
 nltk.download('omw-1.4')
@@ -40,7 +40,7 @@ def plot_word_clouds():
 
     #wordcloud.generate_from_frequencies(frequencies=word_cloud["negative_unseen"])
     wordcloud.generate_from_frequencies(frequencies=word_cloud["negative_train"])
-    
+
     plt.figure()
     plt.imshow(wordcloud, interpolation="bilinear")
     plt.axis("off")
@@ -49,7 +49,7 @@ def plot_word_clouds():
 
 def plot_pie_charts():
 
-    sentiment_values = TweetDAO().get_sentiment_values()
+    sentiment_values = DAO().get_sentiment_values()
     labels = ["Positive", "Negative"]
 
     pie_chart = make_subplots(rows=2, cols=3, specs=[[{'type': 'domain'}, {
@@ -57,71 +57,95 @@ def plot_pie_charts():
 
     colours = ['rgb(144,238,144)','rgb(255,69,0)' ]
 
-    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[1][1], sentiment_values[1][2]], name=sentiment_values[1][0], marker_colors=colours),
+    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[2][1], sentiment_values[2][2]], name=sentiment_values[2][0], marker_colors=colours),
                         1, 1)
-    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[0][1], sentiment_values[0][2]], name=sentiment_values[0][0]),
+    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[1][1], sentiment_values[1][2]], name=sentiment_values[1][0]),
                         1, 2)
-    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[3][1], sentiment_values[3][2]], name=sentiment_values[3][0]),
+    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[0][1], sentiment_values[0][2]], name=sentiment_values[0][0]),
+                        1, 3)
+    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[4][1], sentiment_values[4][2]], name=sentiment_values[4][0]),
                         2, 1)
-    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[2][1], sentiment_values[2][2]], name=sentiment_values[2][0]),
+    pie_chart.add_trace(go.Pie(labels=labels, values=[sentiment_values[3][1], sentiment_values[3][2]], name=sentiment_values[3][0]),
                         2, 2)
 
-    total_negative = sentiment_values[1][1] + sentiment_values[0][1] + sentiment_values[3][1] + sentiment_values[2][1]
-    total_positive = sentiment_values[1][2] + sentiment_values[0][2] + sentiment_values[3][2] + sentiment_values[2][2]
+    total_negative = sentiment_values[1][1] + sentiment_values[0][1] + sentiment_values[3][1] + sentiment_values[2][1] + sentiment_values[4][1]
+    total_positive = sentiment_values[1][2] + sentiment_values[0][2] + sentiment_values[3][2] + sentiment_values[2][2] + sentiment_values[4][2]
     pie_chart.add_trace(go.Pie(labels=labels, values=[total_negative, total_positive], name="Total"),
-                        1, 3)
+                        2, 3)
     pie_chart.update_traces(hoverinfo="label+percent+name", textfont_size=20, textinfo="percent+value",marker=dict(line=dict(color='#000000', width=1)))
 
     pie_chart.update_layout(
-        title_text="<b>F.A.N.G companies' Twitter sentiment</b>",
+        title_text="<b>F.A.A.N.G companies' Twitter sentiment</b>",
         title_x=0.5,
         title_font_size=30,
         title_font_family='Arial',
 
         annotations=[dict(text='<b>Facebook</b>', x=0.125, y=1.05, font_size=11, showarrow=False),
-                     dict(text='<b>Amazon</b>', x=0.5, y=1.05,
+                     dict(text='<b>Apple</b>', x=0.5, y=1.05,
                           font_size=12, showarrow=False),
+                     dict(text='<b>Amazon</b>', x=0.885, y=1.05, font_size=12, showarrow=False),
                      dict(text='<b>Netflix</b>', x=0.125, y=0.45,
                           font_size=12, showarrow=False),
                      dict(text='<b>Google</b>', x=0.5, y=0.45, font_size=12, showarrow=False),
-                     dict(text='<b>All Tweets</b>', x=0.885, y=1.05, font_size=12, showarrow=False)])
-    #fig.update_traces(hoverinfo='label+percent', textinfo='value', textfont_size=20,
-            #      marker=dict(colors=colors, line=dict(color='#000000', width=2)))
+                     dict(text='<b>All Tweets</b>', x=0.885, y=0.45, font_size=12, showarrow=False)])
 
     pie_chart.show()
 
 def plot_line_chart():
     
-    sentiment_values = TweetDAO().get_sentiment_values()
-    sentiment_values = TweetDAO().get_sentiment_values()
+    sentiment_values = DAO().get_sentiment_values()
     positive = {}
     negative = {}
     labels = ["Positive", "Negative"]
 
-    for index in range(0, 4):
+    for index in range(0, 5):
         fig = go.Figure()
-        fig = make_subplots(rows=1, cols=2)
+        #fig = make_subplots(rows=1, cols=2)
         json_sentiment = eval(sentiment_values[index][3])
-
+        positive = {}
+        negative = {}
         for key in json_sentiment.keys():
-
+            
             positive[key] = json_sentiment[key]["positive"]
             negative[key] = json_sentiment[key]["negative"]
-
-
-        # Add traces
+       
         fig.add_trace(go.Scatter(x=list(positive.keys()), y=list(positive.values()),
                             mode='lines',
-                            name='Positive'), 1, 1)
+                            name='Positive'))
         fig.add_trace(go.Scatter(x=list(negative.keys()), y=list(negative.values()),
                             mode='lines',
-                            name='Negative'), 1, 2)
+                            name='Negative'))
+        fig.update_xaxes(
+            tickangle = 90,
+            title_text = "Date",
+            title_font = {
+                "size": 20,
+                "family": 'Arial'
+            },
+            title_standoff = 25
+        )
 
+        fig.update_yaxes(
+            title_text = "Number of Tweets",
+            title_standoff = 25,
+            title_font = {
+                "size": 20,
+                "family": 'Arial'
+            },
+        )
+
+        fig.update_layout(
+            title_text="<b>" + sentiment_values[index][0].capitalize() + " Tweet sentiment over time</b>",
+            title_x=0.5,
+            title_font_size=30,
+            title_font_family='Arial'
+        )
         fig.show()
+        
 
 def plot_stacked_area():
 
-    sentiment_values = TweetDAO().get_sentiment_values()
+    sentiment_values = DAO().get_sentiment_values()
     positive = {}
     negative = {}
     labels = ["Positive", "Negative"]

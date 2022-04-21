@@ -8,7 +8,7 @@ import mysql.connector
 import utility
 import json
 
-class TweetDAO():
+class DAO():
 
     def new_connection(self):
         try:

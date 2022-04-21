@@ -1,9 +1,10 @@
-from tweet_dao import TweetDAO
+from data_access_object import DAO
 import utility
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import metrics
 import json
+import datetime
 
 """
 Global variables. This could have been made into a class, but this seemed more efficient.
@@ -290,7 +291,7 @@ def laplace_smoothing(word):
 
 
 def run_naive_bayes():
-    dao = TweetDAO()
+    dao = DAO()
     train(utility.get_train())
 
     get_conditional_probabilities()
@@ -298,7 +299,7 @@ def run_naive_bayes():
     db_tweets = dao.get_all_tweets()
 
     missing = 0
-    company_names = ['amazon', 'facebook', 'netflix', 'google']
+    company_names = ['amazon', 'facebook', 'netflix', 'google', 'apple']
     positive_predictions = {}
     negative_predictions = {}
     sentiment_values = {}
@@ -326,19 +327,27 @@ def run_naive_bayes():
             current_positive *= positive_probs[word]
             current_negative *= negative_probs[word]
 
+        date = datetime.datetime.date(row[4])
+
+        if str(date) not in sentiment_values[row[1]].keys():
+            sentiment_values[row[1]][str(date)] = {"positive": 0, "negative": 0}
         if current_positive > current_negative:
             positive_predictions[row[1]] += 1
-            
+            sentiment_values[row[1]][str(date)]["positive"] += 1 
         else:
             negative_predictions[row[1]] += 1
+            sentiment_values[row[1]][str(date)]["negative"] += 1
         
         #sentiment_values[row[1]][str(row[4])] = {}
-        sentiment_values[row[1]][index] = {}
+        #sentiment_values[row[1]][index] = {}
 
         sentiment_json = {'positive':  (current_positive / (current_positive + current_negative)), 'negative': + (current_negative / (current_positive + current_negative))}
         #sentiment_json = {'positive': current_positive, 'negative': current_negative}
 
-        sentiment_values[row[1]][index] = sentiment_json
+
+
+
+       # sentiment_values[row[1]][index] = sentiment_json
      
         index += 1
 
@@ -347,7 +356,7 @@ def run_naive_bayes():
             company, positive_predictions[company], negative_predictions[company], json.dumps(sentiment_values[company]))
     
 def get_word_clouds():
-    dao = TweetDAO()
+    dao = DAO()
 
     train(utility.get_train())
 
@@ -356,7 +365,7 @@ def get_word_clouds():
     db_tweets = dao.get_all_tweets()
 
     missing = 0
-    company_names = ['amazon', 'facebook', 'netflix', 'google']
+    company_names = ['amazon', 'facebook', 'netflix', 'google', 'apple']
     positive_predictions = {}
     negative_predictions = {}
     sentiment_values = {}

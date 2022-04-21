@@ -1,7 +1,6 @@
-from tweet_dao import TweetDAO
-import tweepy
+from data_access_object import DAO
 import os
-
+import tweepy
 
 class ScraperManager():
 
