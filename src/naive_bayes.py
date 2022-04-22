@@ -51,7 +51,7 @@ def build_table(dataset):
     return table
 
 
-def get_prior_probabilities(positive_tweets, negative_tweets):
+def calc_prior_probabilities(positive_tweets, negative_tweets):
     '''
     Gets the prior probabilities for the positive and negative classes. Does not return anything
     but does change the global variable, prior_probs
@@ -70,6 +70,64 @@ def get_prior_probabilities(positive_tweets, negative_tweets):
 
     global prior_probs  # change prior_probs global variable
     prior_probs = {"pos": positive, "neg": negative}
+
+
+def calc_conditional_probabilities():
+    """
+    Calculates conditional probabilities for each word in the positive and negative bag of words
+    """
+
+    # retrieve globals
+    global positive_amount
+    global negative_amount
+    global positive_probs
+    global negative_probs
+
+    # sum the total number of positive words using term frequencies
+    positive_amount = 0
+    for value in positive_dict.values():
+        positive_amount += value
+
+    # sum the total number of negative words using term frequencies
+    negative_amount = 0
+    for value in negative_dict.values():
+        negative_amount += value
+
+    # calculate conitional probability for each word in the positive dictionary
+    positive_probs = {}
+    for key in positive_dict:
+        positive_probs[key] = positive_dict[key] / positive_amount
+
+    # calculate conitional probability for each word in the negative dictionary
+    negative_probs = {}
+    for key in negative_dict:
+        negative_probs[key] = negative_dict[key] / negative_amount
+
+
+def laplace_smoothing(word):
+    """
+    Performs Laplace smoothing on the specified word.
+        Parameters:
+            word (string): The word to perform Laplace smoothing for.
+    """
+
+    # retrieve global variables
+    global positive_dict
+    global positive_probs
+    global negative_dict
+    global negative_probs
+
+    # if the word is not in the keys for the positive dictionary,
+    # set its term frequency to 1 and caclulate its probability
+    if word not in positive_dict.keys():
+        positive_dict[word] = 1
+        positive_probs[word] = 1 / positive_amount
+
+    # if the word is not in the keys for the negative dictionary,
+    # set its term frequency to 1 and caclulate its probability
+    if word not in negative_dict.keys():
+        negative_dict[word] = 1
+        negative_probs[word] = 1 / negative_amount
 
 
 def train(train_tweets):
@@ -101,64 +159,7 @@ def train(train_tweets):
             negative_dict[key] = 1
 
     # set prior probabilities for positive and negative classes
-    get_prior_probabilities(positive_tweets, negative_tweets)
-
-
-def cross_valdation():
-    folds = utility.get_folds()
-    average_confusion = {"true_positive": 0, "false_positive": 0,
-                         "false_negative": 0, "true_negative": 0}
-    average_accuracy = 0
-    for key, value in folds.items():
-
-        train(value["training"])
-        get_conditional_probabilities()
-        test_results = test(value['test'])
-        print(key + ":")
-        print(test_results["confusion"])
-        print(str(test_results["accuracy"] * 100) + "%")
-
-        average_confusion["true_positive"] += test_results["confusion"]["true_positive"] / \
-            len(folds)
-        average_confusion["false_positive"] += test_results["confusion"]["false_positive"] / \
-            len(folds)
-        average_confusion["true_negative"] += test_results["confusion"]["true_negative"] / \
-            len(folds)
-        average_confusion["false_negative"] += test_results["confusion"]["false_negative"] / \
-            len(folds)
-
-        average_accuracy += test_results["accuracy"]
-
-    average_accuracy = average_accuracy / len(folds)
-
-    print()
-    print("Averages after " + str(len(folds)) + " folds: ")
-    print(average_confusion)
-    print(str(average_accuracy * 100) + "%")
-    print()
-
-
-def get_conditional_probabilities():
-
-    global positive_amount
-    positive_amount = 0
-    for value in positive_dict.values():
-        positive_amount += value
-
-    global negative_amount
-    negative_amount = 0
-    for value in negative_dict.values():
-        negative_amount += value
-
-    global positive_probs
-    positive_probs = {}
-    for key in positive_dict:
-        positive_probs[key] = positive_dict[key] / positive_amount
-
-    global negative_probs
-    negative_probs = {}
-    for key in negative_dict:
-        negative_probs[key] = negative_dict[key] / negative_amount
+    calc_prior_probabilities(positive_tweets, negative_tweets)
 
 
 def test(test_tweets):
@@ -204,81 +205,11 @@ def test(test_tweets):
     return {"confusion": confusion_matrix, "accuracy": accuracy}
 
 
-def get_frequencies():
-
-    train(utility.get_train())
-
-    get_conditional_probabilities()
-
-    test_tweets = utility.get_test()
-
-    num_correct = 0
-    missing = 0
-
-    confusion_matrix = {"true_positive": 0, "false_positive": 0,
-                        "false_negative": 0, "true_negative": 0}
-
-    for index, row in test_tweets.iterrows():
-        current_positive = prior_probs["pos"]
-        current_negative = prior_probs["neg"]
-
-        if not isinstance(row['text'], str):
-            missing += 1
-            continue
-
-        for word in row['text'].split(" "):
-            laplace_smoothing(word)
-
-            current_positive *= positive_probs[word]
-            current_negative *= negative_probs[word]
-
-        if current_positive > current_negative:
-            sentiment = 2
-        else:
-            sentiment = -2
-
-        if sentiment == row['target']:
-
-            if sentiment == 2:
-                confusion_matrix["true_positive"] += 1
-            elif sentiment == -2:
-                confusion_matrix["true_negative"] += 1
-
-            num_correct += 1
-
-        else:
-            if sentiment == 2:
-                confusion_matrix["false_positive"] += 1
-
-            elif sentiment == -2:
-                confusion_matrix["false_negative"] += 1
-
-    print(confusion_matrix)
-
-    print(str(num_correct) + "/" + str(len(test_tweets) - missing) +
-          " = " + str((num_correct/(len(test_tweets) - missing))))
-
-
-def laplace_smoothing(word):
-    global positive_dict
-    global positive_probs
-    global negative_dict
-    global negative_probs
-
-    if word not in positive_dict.keys():
-        positive_dict[word] = 1
-        positive_probs[word] = 1 / positive_amount
-
-    if word not in negative_dict.keys():
-        negative_dict[word] = 1
-        negative_probs[word] = 1 / negative_amount
-
-
 def run_naive_bayes():
     dao = DAO()
     train(utility.get_train())
 
-    get_conditional_probabilities()
+    calc_conditional_probabilities()
 
     db_tweets = dao.get_all_tweets()
 
@@ -292,10 +223,6 @@ def run_naive_bayes():
         positive_predictions[company] = 0
         negative_predictions[company] = 0
         sentiment_values[company] = {}
-        # sentiment_values[company]["positive"] = {}
-        # sentiment_values[company]["negative"] = {}
-
-    index = 0
 
     for row in db_tweets:
         current_positive = prior_probs["pos"]
@@ -316,6 +243,7 @@ def run_naive_bayes():
         if str(date) not in sentiment_values[row[1]].keys():
             sentiment_values[row[1]][str(date)] = {
                 "positive": 0, "negative": 0}
+
         if current_positive > current_negative:
             positive_predictions[row[1]] += 1
             sentiment_values[row[1]][str(date)]["positive"] += 1
@@ -323,28 +251,21 @@ def run_naive_bayes():
             negative_predictions[row[1]] += 1
             sentiment_values[row[1]][str(date)]["negative"] += 1
 
-        # sentiment_values[row[1]][str(row[4])] = {}
-        # sentiment_values[row[1]][index] = {}
-
-        sentiment_json = {'positive':  (current_positive / (current_positive + current_negative)),
-                          'negative': + (current_negative / (current_positive + current_negative))}
-        # sentiment_json = {'positive': current_positive, 'negative': current_negative}
-
-       # sentiment_values[row[1]][index] = sentiment_json
-
-        index += 1
-
     for company in company_names:
         dao.add_sentiment_values(
             company, positive_predictions[company], negative_predictions[company], json.dumps(sentiment_values[company]))
 
+def run_classifier():
+    """
+    
+    """
 
 def get_word_clouds():
     dao = DAO()
 
     train(utility.get_train())
 
-    get_conditional_probabilities()
+    calc_conditional_probabilities()
 
     db_tweets = dao.get_all_tweets()
 
@@ -411,6 +332,58 @@ def get_word_clouds():
     return bag_of_words
 
 
+def cross_valdation():
+    """
+    Cross validation for accuracy testing and confusion matrix calculations.
+    Prints all results to the console.
+    """
+
+    folds = utility.get_folds()  # get the datasets for each fold of the cross validation
+
+    # initialise confusion matrix
+    average_confusion = {"true_positive": 0, "false_positive": 0,
+                         "false_negative": 0, "true_negative": 0}
+    average_accuracy = 0
+
+    # loop through each dataset for each fold
+    for key, dataset in folds.items():
+
+        # train the classifier on the training set for the current fold
+        train(dataset["training"])
+        # get the conditional probabilities for current fold
+        calc_conditional_probabilities()
+        # test the classifier on the test set for the current fold
+        test_results = test(dataset['test'])
+
+        # print accuracy results to console
+        print(key + ":")
+        print(test_results["confusion"])
+        print(str(test_results["accuracy"] * 100) + "%")
+
+        # calculate confusion matrix values for current fold
+        average_confusion["true_positive"] += test_results["confusion"]["true_positive"] / \
+            len(folds)
+        average_confusion["false_positive"] += test_results["confusion"]["false_positive"] / \
+            len(folds)
+        average_confusion["true_negative"] += test_results["confusion"]["true_negative"] / \
+            len(folds)
+        average_confusion["false_negative"] += test_results["confusion"]["false_negative"] / \
+            len(folds)
+
+        # add current accuracy to average accuracy
+        average_accuracy += test_results["accuracy"]
+
+    # calculate average accuracy across 5 folds
+    average_accuracy = average_accuracy / len(folds)
+
+    # print 5-fold averages
+    print()
+    print("Averages after " + str(len(folds)) + " folds: ")
+    print(average_confusion)
+    print(str(average_accuracy * 100) + "%")
+    print()
+
+
 def run_scikit():
     """
     Runs 5-fold cross validation on Scikit-learn Multinomial Naive Bayes.
@@ -439,7 +412,7 @@ def run_scikit():
         test_tweets = dataset["test"]  # get test tweets for current fold
         test_vector = vectorizer.transform(
             test_tweets.text.astype('U'))  # vectorize test set
-            
+
         # make predictions on test set
         test_predicted = nb.predict(test_vector)
 
