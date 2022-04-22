@@ -28,8 +28,8 @@ scraper_google = scraper.Scraper("google")
 scraper_apple = scraper.Scraper("apple")
 
 scraper_list = [scraper_apple]
-scraper_list = [scraper_amazon, scraper_facebook,
-                scraper_netflix, scraper_google, scraper_apple]
+#scraper_list = [scraper_amazon, scraper_facebook,
+ #               scraper_netflix, scraper_google, scraper_apple]
 
 
 manager = scraper_manager.ScraperManager(scraper_list, dao)

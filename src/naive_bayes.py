@@ -1,5 +1,5 @@
-from data_access_object import DAO
-import utility
+from data_access_object import DAO # local DB code
+import utility # local utility code
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import metrics
@@ -22,7 +22,7 @@ def build_table(dataset):
     '''
     Returns a table containing the occurences for each word in the given dataset.
 
-        Paramters:
+        Parameters:
             dataset (dataframe): The dataset to create a table for.
 
         Returns:    
@@ -56,7 +56,7 @@ def get_prior_probabilities(positive_tweets, negative_tweets):
     Gets the prior probabilities for the positive and negative classes. Does not return anything
     but does change the global variable, prior_probs
 
-        Paramters:
+        Parameters:
             positive_tweets (dataframe): A dataframe containing positive Tweets from the training set.
             negative_tweets (dataframe): A dataframe containing negative Tweets from the training set. 
     '''
