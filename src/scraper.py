@@ -128,7 +128,7 @@ class Scraper():
                 # since_id retrieves Tweets after the given ID
                 tweets = self.api.search_tweets(
                     q=self.search, lang="en", count=self.count, tweet_mode="extended",
-                    until=current_day_in_week.date(), since_id=oldest_id)
+                    until=current_day_in_week.date() + datetime.timedelta(1), since_id=oldest_id)
 
                 # extend search_tweets by adding the retrieved Tweets
                 self.search_tweets.extend(tweets)

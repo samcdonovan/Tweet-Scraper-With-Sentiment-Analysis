@@ -1,5 +1,5 @@
-from data_access_object import DAO # local DB code
-import utility # local utility code
+from data_access_object import DAO  # local DB code
+import utility  # local utility code
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import metrics
@@ -7,7 +7,7 @@ import json
 import datetime
 
 """
-Global variables. This could have been made into a class, but this seemed more efficient.
+Global variables. This could have been made into a class, but globals seemed more efficient.
 """
 positive_dict = {}
 negative_dict = {}
@@ -25,8 +25,8 @@ def build_table(dataset):
         Parameters:
             dataset (dataframe): The dataset to create a table for.
 
-        Returns:    
-            table (dictionary): Table containing the number of occurences for each word. 
+        Returns:
+            table (dictionary): Table containing the number of occurences for each word.
     '''
     table = {}
 
@@ -58,7 +58,7 @@ def get_prior_probabilities(positive_tweets, negative_tweets):
 
         Parameters:
             positive_tweets (dataframe): A dataframe containing positive Tweets from the training set.
-            negative_tweets (dataframe): A dataframe containing negative Tweets from the training set. 
+            negative_tweets (dataframe): A dataframe containing negative Tweets from the training set.
     '''
 
     # total number of Tweets in training set
@@ -73,14 +73,22 @@ def get_prior_probabilities(positive_tweets, negative_tweets):
 
 
 def train(train_tweets):
-    # train_tweets =
+    """
+    Main function for training the term frequencies for the NB classifier.
 
+        Parameters:
+            train_tweets (dataframe): The Tweets to train the classifier on.
+    """
+
+    # seperate the positive and negative Tweets
     positive_tweets = train_tweets[train_tweets['target'] == 2]
     negative_tweets = train_tweets[train_tweets['target'] == -2]
 
+    # retrieve global variables
     global positive_dict
     global negative_dict
 
+    # train term frequencies for positive and negative words
     positive_dict = build_table(positive_tweets)
     negative_dict = build_table(negative_tweets)
 
@@ -92,6 +100,7 @@ def train(train_tweets):
         if key not in negative_dict:
             negative_dict[key] = 1
 
+    # set prior probabilities for positive and negative classes
     get_prior_probabilities(positive_tweets, negative_tweets)
 
 
@@ -169,15 +178,7 @@ def test(test_tweets):
 
         for word in row['text'].split(" "):
             laplace_smoothing(word)
-            """
-            if word not in positive_dict.keys():
-                positive_dict[word] = 1
-                positive_probs[word] = 1 / positive_amount
 
-            if word not in negative_dict.keys():
-                negative_dict[word] = 1
-                negative_probs[word] = 1 / negative_amount
-            """
             current_positive *= positive_probs[word]
             current_negative *= negative_probs[word]
 
@@ -187,22 +188,16 @@ def test(test_tweets):
             sentiment = -2
 
         if sentiment == row['target']:
+            num_correct += 1  # increment number of correct predictions
 
             if sentiment == 2:
-                #true_positive += 1
                 confusion_matrix["true_positive"] += 1
             elif sentiment == -2:
-                #true_negative += 1
                 confusion_matrix["true_negative"] += 1
-
-            num_correct += 1
-
         else:
             if sentiment == 2:
                 confusion_matrix["false_positive"] += 1
-                #false_positive += 1
             elif sentiment == -2:
-                #false_negative += 1
                 confusion_matrix["false_negative"] += 1
 
     accuracy = num_correct / (len(test_tweets) - missing)
@@ -233,15 +228,7 @@ def get_frequencies():
 
         for word in row['text'].split(" "):
             laplace_smoothing(word)
-            """
-            if word not in positive_dict.keys():
-                positive_dict[word] = 1
-                positive_probs[word] = 1 / positive_amount
 
-            if word not in negative_dict.keys():
-                negative_dict[word] = 1
-                negative_probs[word] = 1 / negative_amount
-            """
             current_positive *= positive_probs[word]
             current_negative *= negative_probs[word]
 
@@ -253,10 +240,8 @@ def get_frequencies():
         if sentiment == row['target']:
 
             if sentiment == 2:
-                #true_positive += 1
                 confusion_matrix["true_positive"] += 1
             elif sentiment == -2:
-                #true_negative += 1
                 confusion_matrix["true_negative"] += 1
 
             num_correct += 1
@@ -264,9 +249,8 @@ def get_frequencies():
         else:
             if sentiment == 2:
                 confusion_matrix["false_positive"] += 1
-                #false_positive += 1
+
             elif sentiment == -2:
-                #false_negative += 1
                 confusion_matrix["false_negative"] += 1
 
     print(confusion_matrix)
@@ -308,8 +292,8 @@ def run_naive_bayes():
         positive_predictions[company] = 0
         negative_predictions[company] = 0
         sentiment_values[company] = {}
-        #sentiment_values[company]["positive"] = {}
-        #sentiment_values[company]["negative"] = {}
+        # sentiment_values[company]["positive"] = {}
+        # sentiment_values[company]["negative"] = {}
 
     index = 0
 
@@ -330,31 +314,31 @@ def run_naive_bayes():
         date = datetime.datetime.date(row[4])
 
         if str(date) not in sentiment_values[row[1]].keys():
-            sentiment_values[row[1]][str(date)] = {"positive": 0, "negative": 0}
+            sentiment_values[row[1]][str(date)] = {
+                "positive": 0, "negative": 0}
         if current_positive > current_negative:
             positive_predictions[row[1]] += 1
-            sentiment_values[row[1]][str(date)]["positive"] += 1 
+            sentiment_values[row[1]][str(date)]["positive"] += 1
         else:
             negative_predictions[row[1]] += 1
             sentiment_values[row[1]][str(date)]["negative"] += 1
-        
-        #sentiment_values[row[1]][str(row[4])] = {}
-        #sentiment_values[row[1]][index] = {}
 
-        sentiment_json = {'positive':  (current_positive / (current_positive + current_negative)), 'negative': + (current_negative / (current_positive + current_negative))}
-        #sentiment_json = {'positive': current_positive, 'negative': current_negative}
+        # sentiment_values[row[1]][str(row[4])] = {}
+        # sentiment_values[row[1]][index] = {}
 
-
-
+        sentiment_json = {'positive':  (current_positive / (current_positive + current_negative)),
+                          'negative': + (current_negative / (current_positive + current_negative))}
+        # sentiment_json = {'positive': current_positive, 'negative': current_negative}
 
        # sentiment_values[row[1]][index] = sentiment_json
-     
+
         index += 1
 
     for company in company_names:
         dao.add_sentiment_values(
             company, positive_predictions[company], negative_predictions[company], json.dumps(sentiment_values[company]))
-    
+
+
 def get_word_clouds():
     dao = DAO()
 
@@ -375,7 +359,8 @@ def get_word_clouds():
         negative_predictions[company] = 0
         sentiment_values[company] = {}
 
-    bag_of_words = {"positive_train":{}, "negative_train": {}, "positive_unseen": {}, "negative_unseen": {}}
+    bag_of_words = {"positive_train": {}, "negative_train": {},
+                    "positive_unseen": {}, "negative_unseen": {}}
 
     for row in db_tweets:
         current_positive = prior_probs["pos"]
@@ -394,18 +379,18 @@ def get_word_clouds():
         if current_positive > current_negative:
             positive_predictions[row[1]] += 1
             for word in row[3].split(" "):
-                if word =="climate" or word=="change" or word=="global":
+                if word == "climate" or word == "change" or word == "global":
                     continue
 
                 if word not in bag_of_words["positive_unseen"].keys():
                     bag_of_words["positive_unseen"][word] = 0
-                    
+
                 bag_of_words["positive_unseen"][word] += 1
-            
+
         else:
             negative_predictions[row[1]] += 1
             for word in row[3].split(" "):
-                if word =="climate" or word=="change" or word=="global":
+                if word == "climate" or word == "change" or word == "global":
                     continue
 
                 if word not in bag_of_words["negative_unseen"].keys():
@@ -419,41 +404,55 @@ def get_word_clouds():
         bag_of_words["positive_train"][word] = positive_dict[word]
 
     for word in sorted(negative_dict, key=negative_dict.get, reverse=True):
-        if word =="climate" or word=="change" or word=="global":
+        if word == "climate" or word == "change" or word == "global":
             continue
         bag_of_words["negative_train"][word] = negative_dict[word]
 
     return bag_of_words
 
-def run_scikit():
-    #train_tweets = utility.get_train()
-    vectorizer = CountVectorizer()
-    folds = utility.get_folds()
-    average_accuracy = 0
-    for key, value in folds.items():
-        train_tweets = value["training"]
-        # train(value["training"])
-        # get_conditional_probabilities()
-        print(key + ":")
 
-        # test(value['test'])
+def run_scikit():
+    """
+    Runs 5-fold cross validation on Scikit-learn Multinomial Naive Bayes.
+    This is used for accuracy comparisons against my implementation.
+    """
+
+    vectorizer = CountVectorizer()  # used for vectorizing the Tweets
+    folds = utility.get_folds()  # get the datasets for each fold
+    average_accuracy = 0
+
+    # loop through each fold
+    for key, dataset in folds.items():
+
+        # get training tweets for current fold
+        train_tweets = dataset["training"]
+
+        # alpha 1.0 for Laplace smoothing
         nb = MultinomialNB(alpha=1.0, fit_prior=True)
 
-        vectorizer.fit(train_tweets.text.astype('U'))
-
+        vectorizer.fit(train_tweets.text.astype('U'))  # vectorize training set
         train_array = vectorizer.transform(train_tweets.text.astype('U'))
 
+        # fit the training set to the Naive Bayes classifier
         nb.fit(train_array, train_tweets.target)
 
-        #test_tweets = utility.get_test()
-        test_tweets = value["test"]
-        test_vector = vectorizer.transform(test_tweets.text.astype('U'))
+        test_tweets = dataset["test"]  # get test tweets for current fold
+        test_vector = vectorizer.transform(
+            test_tweets.text.astype('U'))  # vectorize test set
+            
+        # make predictions on test set
         test_predicted = nb.predict(test_vector)
+
+        # use metrics to get the current accuracy as a float
         current_accuracy = metrics.accuracy_score(
             test_tweets.target, test_predicted)
+
         average_accuracy += current_accuracy
 
+        # print the current accuracy as a percentage
+        print(key + ":")
         print("Scikit-learn: " + str(current_accuracy * 100) + "%")
 
+    # print the average accuracy across the 5 folds as a percentage
     print()
     print("Scikit avg. : " + str((average_accuracy / len(folds)) * 100) + "%")
