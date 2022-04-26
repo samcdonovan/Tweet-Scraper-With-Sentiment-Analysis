@@ -17,7 +17,6 @@ negative_probs = {}
 positive_amount = 0
 negative_amount = 0
 
-
 def build_table(dataset):
     '''
     Returns a table containing the occurences for each word in the given dataset.
@@ -338,7 +337,7 @@ def cross_valdation():
     Prints all results to the console.
     """
 
-    folds = utility.get_folds()  # get the datasets for each fold of the cross validation
+    folds = utility.get_fold_datasets()  # get the datasets for each fold of the cross validation
 
     # initialise confusion matrix
     average_confusion = {"true_positive": 0, "false_positive": 0,
@@ -391,7 +390,7 @@ def run_scikit():
     """
 
     vectorizer = CountVectorizer()  # used for vectorizing the Tweets
-    folds = utility.get_folds()  # get the datasets for each fold
+    folds = utility.get_fold_datasets()  # get the datasets for each fold
     average_accuracy = 0
 
     # loop through each fold

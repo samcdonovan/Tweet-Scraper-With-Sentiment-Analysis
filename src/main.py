@@ -8,53 +8,71 @@ dao = DAO()
 
 import utility
 
-#utility.training_and_test_to_csv()
-#utility.training_csv()
-#naive_bayes.cross_valdation()
-#naive_bayes.run_scikit()
-#naive_bayes.get_frequencies()
+user_input = ''
 
-"""
-tweetdao = TweetDAO()
-tweetdao.clean_tweets_in_db()
-"""
+while user_input != '0':
+    print()
+    print("Menu:")
+    print("-------------------------------------")
+    print()
+    print("1. Collect Tweets")
+    print("2. Run Naive Bayes")
+    print("3. Run cross-validation")
+    print("4. Visualise data")
+    print("5. Clean database Tweets")
+    print("0. Exit")
+    print()
+    print("-------------------------------------")
 
-scraper_amazon = scraper.Scraper("amazon")
-scraper_facebook = scraper.Scraper("facebook")
-scraper_netflix = scraper.Scraper("netflix")
-scraper_google = scraper.Scraper("google")
+    user_input = input("Choose one of the above options: ") 
+
+    if user_input == "1":
+        scraper_amazon = scraper.Scraper("amazon")
+        scraper_facebook = scraper.Scraper("facebook")
+        scraper_netflix = scraper.Scraper("netflix")
+        scraper_google = scraper.Scraper("google")
 
 
-scraper_apple = scraper.Scraper("apple")
+        scraper_apple = scraper.Scraper("apple")
 
-scraper_list = [scraper_apple]
-#scraper_list = [scraper_amazon, scraper_facebook,
- #               scraper_netflix, scraper_google, scraper_apple]
+        scraper_list = [scraper_apple]
+        scraper_list = [scraper_amazon, scraper_facebook,
+                        scraper_netflix, scraper_google, scraper_apple]
 
 
-manager = scraper_manager.ScraperManager(scraper_list, dao)
+        manager = scraper_manager.ScraperManager(scraper_list, dao)
 
-manager.start_threads()
-try:
-    while manager.get_thread_complete_count() < len(scraper_list):
-       manager.check_completed_threads()
+        manager.start_threads()
+        try:
+            while manager.get_thread_complete_count() < len(scraper_list):
+                manager.check_completed_threads()
 
-except KeyboardInterrupt:
-    print("--------------------------")
-    print("Aborting program...")
+        except KeyboardInterrupt:
+            print("--------------------------")
+            print("Aborting program...")
 
-manager.finalise()
+        manager.finalise()
 
-naive_bayes.run_naive_bayes()
-#utility.plot_word_clouds()
-utility.plot_pie_charts()
-#utility.plot_stacked_area()
-utility.plot_line_chart()
-#naive_bayes.run_scikit()
-#utility.create_csv()
+        print("All threads stopped and database connections closed.")
+        print("--------------------------")
+    elif user_input == "2":
+        naive_bayes.run_naive_bayes()
+    elif user_input == "3":
+        utility.training_csv()
+        naive_bayes.cross_valdation()
+        naive_bayes.run_scikit()
+    elif user_input == "4":
+        utility.plot_word_clouds()
+        utility.plot_pie_charts()
+        utility.plot_line_chart()
+    elif user_input == "5":
+        dao.clean_tweets_in_db()
+    elif user_input == "0":
+        print()
+        print("Closing program...")
+    else:
+        print("Not recognized, please try again.")
 
-print("All threads stopped and database connections closed.")
-print("--------------------------")
 
 if not exit:
     print("true")
