@@ -10,6 +10,7 @@ import utility
 
 user_input = ''
 
+# text-based user input menu for running the system
 while user_input != '0':
     print()
     print("Menu:")
@@ -26,6 +27,7 @@ while user_input != '0':
 
     user_input = input("Choose one of the above options: ") 
 
+    # collect Tweets using API
     if user_input == "1":
         scraper_amazon = scraper.Scraper("amazon")
         scraper_facebook = scraper.Scraper("facebook")
@@ -56,12 +58,15 @@ while user_input != '0':
         print("All threads stopped and database connections closed.")
         print("--------------------------")
     elif user_input == "2":
+        # run Naive Bayes algorithm on Tweets in MySQL database
         naive_bayes.run_naive_bayes()
     elif user_input == "3":
-        utility.training_csv()
-        naive_bayes.cross_valdation()
-        naive_bayes.run_scikit()
+        utility.training_csv() # get training set
+        naive_bayes.cross_valdation() # run cross validation on local implementation
+        naive_bayes.run_scikit() # run scikit-learns Naive Bayes
     elif user_input == "4":
+
+        # plot word clouds, pie charts and scatter charts
         utility.plot_word_clouds()
         utility.plot_pie_charts()
         utility.plot_line_chart()

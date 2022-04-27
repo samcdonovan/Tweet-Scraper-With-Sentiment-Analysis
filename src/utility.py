@@ -24,7 +24,8 @@ nltk.download('wordnet')
 nltk.download('omw-1.4')
 nltk.download('averaged_perceptron_tagger')
 
-chart_colours =['rgb(60,179,113)', 'rgb(255,69,0)'] # global variable for positve and negative colours
+# global variable for positve and negative colours
+chart_colours = ['rgb(60,179,113)', 'rgb(255,69,0)']
 
 # set Plotly account credentials
 py.tools.set_credentials_file(
@@ -41,8 +42,10 @@ def plot_word_clouds():
     wordcloud = WordCloud()
 
     # generates word clouds for each set of words
-    wordcloud.generate_from_frequencies(frequencies=word_cloud["positive_unseen"])
-    wordcloud.generate_from_frequencies(frequencies=word_cloud["negative_unseen"])
+    wordcloud.generate_from_frequencies(
+        frequencies=word_cloud["positive_unseen"])
+    wordcloud.generate_from_frequencies(
+        frequencies=word_cloud["negative_unseen"])
 
     plt.figure()
     plt.imshow(wordcloud, interpolation="bilinear")
@@ -55,7 +58,7 @@ def plot_pie_charts():
     Plots pie charts of positive and negative distribution of Tweets for each company using Plotly.
     """
 
-    sentiment_values = DAO().get_sentiment_values() # get values from MySQL database
+    sentiment_values = DAO().get_sentiment_values()  # get values from MySQL database
     labels = ["Positive", "Negative"]
 
     pie_chart = make_subplots(rows=2, cols=3, specs=[[{'type': 'domain'}, {
@@ -116,9 +119,8 @@ def plot_line_chart():
     negative = {}
     labels = ["Positive", "Negative"]
 
-    totals = {"positive":{}, "negative": {}}
+    totals = {"positive": {}, "negative": {}}
     for index in range(0, 5):
-      
 
         json_sentiment = eval(sentiment_values[index][3])
         positive = {}
@@ -135,20 +137,22 @@ def plot_line_chart():
             positive[key] = json_sentiment[key]["positive"]
             negative[key] = json_sentiment[key]["negative"]
 
-        draw_line_chart(sentiment_values[index][0].capitalize(), positive, negative)
+        draw_line_chart(sentiment_values[index]
+                        [0].capitalize(), positive, negative)
 
     draw_line_chart("All Tweets", totals["positive"], totals["negative"])
+
 
 def draw_line_chart(name, positive, negative):
     fig = go.Figure()
     fig.add_trace(go.Scatter(x=list(positive.keys()), y=list(positive.values()),
-                                mode='lines+markers',
-                                name='Positive',
-                                line=dict(color=chart_colours[0])))
+                             mode='lines+markers',
+                             name='Positive',
+                             line=dict(color=chart_colours[0])))
     fig.add_trace(go.Scatter(x=list(negative.keys()), y=list(negative.values()),
-                                mode='lines+markers',
-                                name='Negative',
-                                line=dict(color=chart_colours[1])))
+                             mode='lines+markers',
+                             name='Negative',
+                             line=dict(color=chart_colours[1])))
 
     fig.update_xaxes(
         tickangle=90,
@@ -158,7 +162,7 @@ def draw_line_chart(name, positive, negative):
             "family": 'Arial'
         },
         title_standoff=25,
-        dtick =86400000.0 
+        dtick=86400000.0
     )
 
     fig.update_yaxes(
@@ -175,7 +179,7 @@ def draw_line_chart(name, positive, negative):
         title_x=0.5,
         title_font_size=30,
         title_font_family='Arial',
-        xaxis_range = [ list(positive.keys())[0], list(positive.keys())[-1]],
+        xaxis_range=[list(positive.keys())[0], list(positive.keys())[-1]],
         width=800, height=400
     )
     fig.show()
@@ -194,35 +198,58 @@ def get_stop_words():
 
     return stop_list
 
-stop_words = get_stop_words() # put all stop words into global variable
+
+stop_words = get_stop_words()  # put all stop words into global variable
+
 
 def print_stop_words():
+    """
+    Prints all words in stop word list.
+    """
     for word in stop_words:
         print(word)
 
+
 def clean_and_lemmatize(text):
+    """
+    Clean and lemmatize the text of a Tweet
+        Returns:
+            cleaned_text (string): The cleaned and lemmatized text.
+    """
 
-    wnl = WordNetLemmatizer()
-    converted_tweet = convert_to_list(text)
+    wnl = WordNetLemmatizer()  # NLTK lemmatizer
+    converted_tweet = clean_and_tokenize(
+        text)  # cleans the text and tokenize it
 
-    tagged = nltk.pos_tag(converted_tweet)
+    tagged = nltk.pos_tag(converted_tweet)  # POS tag the tokenized Tweet
     wordnet_tagged = list(
         map(lambda x: (x[0], pos_tagger(x[1])), tagged))
 
     lemmatized_sentence = []
+
+    # loop through each word in the tagged list
     for word, tag in wordnet_tagged:
         if tag is None:
-            # if there is no available tag, append the token as is
+            # if there is no available tag, append the word as is
             lemmatized_sentence.append(word)
         else:
-            # else use the tag to lemmatize the token
+            # else use the tag to lemmatize the word
             lemmatized_sentence.append(wnl.lemmatize(word, tag))
 
+    # attached lemmatized words to a string
     cleaned_text = " ".join(lemmatized_sentence)
+
     return cleaned_text
 
 
 def pos_tagger(nltk_tag):
+    """
+    Gets the part of speech for the word (converts NLTK tag to wordnet tag)
+        Parameters:
+            nltk_tag (string): The tag of the word.
+        Returns:
+            Part of speech (string): The wordnet POS tag.
+    """
     if nltk_tag.startswith('J'):
         return wordnet.ADJ
     elif nltk_tag.startswith('V'):
@@ -235,28 +262,38 @@ def pos_tagger(nltk_tag):
         return None
 
 
-def create_csv():
-
+def nltk_stop_words_to_csv():
+    """
+    Puts all of the stop words from the NLTK stop word list into a local CSV file.
+    """
     stop_words = stopwords.words('english')
     with open('data/stop_words.csv', 'w', newline='') as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file) # write to local file
         writer.writerow(stop_words)
 
 
-def convert_to_list(sentence):
+def clean_and_tokenize(text):
+    """
+    Cleans the text by removing all punctuation, stop words, emojis and hyperlinks,
+    and then tokenizes this text.
+        Parameters:
+            text (string): The text to be cleaned and tokenized
+        Returns:
+            converted_list (string[]): The tokenized text in a list.
+    """
+
     converted_list = []
 
-    sentence = ''.join(filter(lambda x: x in string.printable, sentence))
+    text = ''.join(filter(lambda x: x in string.printable, text))
 
-    re.sub('((www.[^s]+)|(https?://[^s]+))', ' ', sentence)
-    english_punctuations = string.punctuation
-    punctuations_list = english_punctuations
+    re.sub('((www.[^s]+)|(https?://[^s]+))', ' ', text)
 
-    remove_punctuation = str.maketrans('', '', punctuations_list)
+    punctuations_list = string.punctuation # get punctuations list from string library
+    remove_punctuation = str.maketrans('', '', punctuations_list) # remove all punctuation from text
 
-    remove_digits = str.maketrans('', '', digits)
-    regex = re.compile('[@#]|((www.[^s]+)|(https?://[^s]+))')
-    re.sub(r'[^\w]', '', sentence)
+    remove_digits = str.maketrans('', '', digits) # removea all digits from text using string library
+    regex = re.compile('[@#]|((www.[^s]+)|(https?://[^s]+))') # use regex to remove all hyperlinks
+    re.sub(r'[^\w]', '', text)
 
     emoji_pattern = re.compile("["
                                u"\U0001F600-\U0001F64F"  # emoticons
@@ -264,42 +301,51 @@ def convert_to_list(sentence):
                                u"\U0001F680-\U0001F6FF"  # transport & map symbols
                                u"\U0001F1E0-\U0001F1FF"  # flags (iOS)
                                "]+", flags=re.UNICODE)
-    emoji_pattern.sub(r'', sentence)
 
-    for word in sentence.split():
+    emoji_pattern.sub(r'', text) # remove all emojis from text
+
+    # loop through each word in the text
+    for word in text.split():
 
         if regex.search(word) != None:
             continue
 
-        word = word.lower()
-        word = word.translate(remove_digits)
-        word = word.translate(remove_punctuation)
-        emoji_pattern.sub(r'', word)
-        word.replace(" ", "")
+        word = word.lower() # lowercase the word
+        word = word.translate(remove_digits) # remove all digits
+        word = word.translate(remove_punctuation) # remove all punctuation
+        emoji_pattern.sub(r'', word) # remove emojis
+        word.replace(" ", "") # remove spaces
+
+        # skip word if its a link, is less than 3 characaters long or if its in the stop words list
         if "http" in word or "htt" in word or len(word) < 3 or word in stop_words:
-             continue
- 
+            continue
+
+        # if word is not just a space or empty
         if not word.isspace() and word:
-            converted_list.append(word)
+            converted_list.append(word) # append word to tokenized list
 
     return converted_list
 
-
-def tokenize(text):
-    return text.split()
-
-
 def get_train():
-
-    dataframe = pd.read_csv('./data/training_set.csv',
+    """
+    Get training data set from local CSV files.
+        Returns:
+            training_set (dataframe): The dataframe of the training set.
+    """
+    training_set = pd.read_csv('./data/training_set.csv',
                             encoding='ISO-8859-1', compression=None)
-    return dataframe
+    return training_set
 
 
 def get_test():
-    dataframe = pd.read_csv('./data/test_set.csv',
+    """
+    Get test data set from local CSV files.
+        Returns:
+            test_set (dataframe): The dataframe of the test set.
+    """
+    test_set = pd.read_csv('./data/test_set.csv',
                             encoding='ISO-8859-1', compression=None)
-    return dataframe
+    return test_set
 
 
 def training_csv():
@@ -440,4 +486,3 @@ def training_and_test_to_csv():
 
     except Exception as ex:
         print("Training data error: " + str(ex))
-
