@@ -1,6 +1,8 @@
 from data_access_object import DAO  # local DB code
 import utility  # local utility code
-from sklearn.naive_bayes import MultinomialNB
+
+# Scikit-learn is used for accuracy comparison
+from sklearn.naive_bayes import MultinomialNB 
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn import metrics
 import json
@@ -16,6 +18,7 @@ positive_probs = {}
 negative_probs = {}
 positive_amount = 0
 negative_amount = 0
+
 
 def build_table(dataset):
     '''
@@ -161,13 +164,90 @@ def train(train_tweets):
     calc_prior_probabilities(positive_tweets, negative_tweets)
 
 
+def run_naive_bayes():
+    """
+    Main function for running Naive Bayes on collected Tweets. After running it,
+    the results are inserted into local MySQL database.
+    """
+    dao = DAO()  # get a DAO object to insert into DB
+    train(utility.get_train())  # train the classifier
+
+    calc_conditional_probabilities()  # calculate the conditional probabilities
+
+    db_tweets = dao.get_all_tweets()  # get collected teets
+
+    missing = 0
+    company_names = ['amazon', 'facebook', 'netflix', 'google', 'apple']
+    positive_predictions = {}
+    negative_predictions = {}
+    sentiment_values = {}
+
+    # initiate predictions for all companies
+    for company in company_names:
+        positive_predictions[company] = 0
+        negative_predictions[company] = 0
+        sentiment_values[company] = {}
+
+    # loop through every row in the DB
+    for row in db_tweets:
+
+        # set current positive and negative to their prior probabilities
+        current_positive = prior_probs["pos"]
+        current_negative = prior_probs["neg"]
+
+        # if the current row is empty, skip this iteration
+        if not isinstance(row[3], str):
+            missing += 1
+            continue
+
+        # loop through each word in the current tweet
+        for word in row[3].split(" "):
+            laplace_smoothing(word)  # call Laplace smoothing on the word
+
+            # multiplty the current probabilities by the conditional probabilities of the word
+            current_positive *= positive_probs[word]
+            current_negative *= negative_probs[word]
+
+        # get date object for current row
+        date = datetime.datetime.date(row[4])
+
+        if str(date) not in sentiment_values[row[1]].keys():
+            sentiment_values[row[1]][str(date)] = {
+                "positive": 0, "negative": 0}
+
+        # if the positive probability is more than the negative, it predicts negative
+        if current_positive > current_negative:
+            # number of positive predicitons for current company
+            positive_predictions[row[1]] += 1
+            # for line chart data
+            sentiment_values[row[1]][str(date)]["positive"] += 1
+        else:
+            # number of negative predicitons for current company
+            negative_predictions[row[1]] += 1
+            sentiment_values[row[1]][str(date)]["negative"] += 1
+
+    # loop through each company
+    for company in company_names:
+        # add the line chart data to the database
+        dao.add_sentiment_values(
+            company, positive_predictions[company], negative_predictions[company], json.dumps(sentiment_values[company]))
+
+
 def test(test_tweets):
+    """
+    Runs Naive Bayes on a test set, for cross validation and building a confusion matrix.
+        Parameters:
+            test_tweets (list): List containing all test Tweets for the current fold
+        Returns:
+            Dictionary containing the confusion matrix and accuracy achieved for this fold.
+    """
     num_correct = 0
     missing = 0
 
     confusion_matrix = {"true_positive": 0, "false_positive": 0,
                         "false_negative": 0, "true_negative": 0}
 
+    # loop through each row in the test set and perform Naive Bayes
     for index, row in test_tweets.iterrows():
         current_positive = prior_probs["pos"]
         current_negative = prior_probs["neg"]
@@ -200,135 +280,9 @@ def test(test_tweets):
             elif sentiment == -2:
                 confusion_matrix["false_negative"] += 1
 
-    accuracy = num_correct / (len(test_tweets) - missing)
+    accuracy = num_correct / (len(test_tweets) - missing)  # calculate accuracy
+
     return {"confusion": confusion_matrix, "accuracy": accuracy}
-
-
-def run_naive_bayes():
-    dao = DAO()
-    train(utility.get_train())
-
-    calc_conditional_probabilities()
-
-    db_tweets = dao.get_all_tweets()
-
-    missing = 0
-    company_names = ['amazon', 'facebook', 'netflix', 'google', 'apple']
-    positive_predictions = {}
-    negative_predictions = {}
-    sentiment_values = {}
-
-    for company in company_names:
-        positive_predictions[company] = 0
-        negative_predictions[company] = 0
-        sentiment_values[company] = {}
-
-    for row in db_tweets:
-        current_positive = prior_probs["pos"]
-        current_negative = prior_probs["neg"]
-
-        if not isinstance(row[3], str):
-            missing += 1
-            continue
-
-        for word in row[3].split(" "):
-            laplace_smoothing(word)
-
-            current_positive *= positive_probs[word]
-            current_negative *= negative_probs[word]
-
-        date = datetime.datetime.date(row[4])
-
-        if str(date) not in sentiment_values[row[1]].keys():
-            sentiment_values[row[1]][str(date)] = {
-                "positive": 0, "negative": 0}
-
-        if current_positive > current_negative:
-            positive_predictions[row[1]] += 1
-            sentiment_values[row[1]][str(date)]["positive"] += 1
-        else:
-            negative_predictions[row[1]] += 1
-            sentiment_values[row[1]][str(date)]["negative"] += 1
-
-    for company in company_names:
-        dao.add_sentiment_values(
-            company, positive_predictions[company], negative_predictions[company], json.dumps(sentiment_values[company]))
-
-def run_classifier():
-    """
-    
-    """
-
-def get_word_clouds():
-    dao = DAO()
-
-    train(utility.get_train())
-
-    calc_conditional_probabilities()
-
-    db_tweets = dao.get_all_tweets()
-
-    missing = 0
-    company_names = ['amazon', 'facebook', 'netflix', 'google', 'apple']
-    positive_predictions = {}
-    negative_predictions = {}
-    sentiment_values = {}
-
-    for company in company_names:
-        positive_predictions[company] = 0
-        negative_predictions[company] = 0
-        sentiment_values[company] = {}
-
-    bag_of_words = {"positive_train": {}, "negative_train": {},
-                    "positive_unseen": {}, "negative_unseen": {}}
-
-    for row in db_tweets:
-        current_positive = prior_probs["pos"]
-        current_negative = prior_probs["neg"]
-
-        if not isinstance(row[3], str):
-            missing += 1
-            continue
-
-        for word in row[3].split(" "):
-            laplace_smoothing(word)
-
-            current_positive *= positive_probs[word]
-            current_negative *= negative_probs[word]
-
-        if current_positive > current_negative:
-            positive_predictions[row[1]] += 1
-            for word in row[3].split(" "):
-                if word == "climate" or word == "change" or word == "global":
-                    continue
-
-                if word not in bag_of_words["positive_unseen"].keys():
-                    bag_of_words["positive_unseen"][word] = 0
-
-                bag_of_words["positive_unseen"][word] += 1
-
-        else:
-            negative_predictions[row[1]] += 1
-            for word in row[3].split(" "):
-                if word == "climate" or word == "change" or word == "global":
-                    continue
-
-                if word not in bag_of_words["negative_unseen"].keys():
-                    bag_of_words["negative_unseen"][word] = 0
-
-                bag_of_words["negative_unseen"][word] += 1
-
-    for word in sorted(positive_dict, key=positive_dict.get, reverse=True):
-        if word == "climate" or word == "change" or word == "global":
-            continue
-        bag_of_words["positive_train"][word] = positive_dict[word]
-
-    for word in sorted(negative_dict, key=negative_dict.get, reverse=True):
-        if word == "climate" or word == "change" or word == "global":
-            continue
-        bag_of_words["negative_train"][word] = negative_dict[word]
-
-    return bag_of_words
 
 
 def cross_valdation():
@@ -337,7 +291,8 @@ def cross_valdation():
     Prints all results to the console.
     """
 
-    folds = utility.get_fold_datasets()  # get the datasets for each fold of the cross validation
+    # get the datasets for each fold of the cross validation
+    folds = utility.get_fold_datasets()
 
     # initialise confusion matrix
     average_confusion = {"true_positive": 0, "false_positive": 0,
@@ -428,3 +383,84 @@ def run_scikit():
     # print the average accuracy across the 5 folds as a percentage
     print()
     print("Scikit avg. : " + str((average_accuracy / len(folds)) * 100) + "%")
+
+
+def get_word_clouds():
+    """
+    Gets data for the word clouds. Similar to run_naive_bayes(), needs more generalising. 
+    Most of the parts in this function come from run_naive_bayes() so will not be commented on.
+        Returns:
+            bag_of_words(dictionary): The bag of words for positive and negative words.
+    """
+
+    dao = DAO()
+
+    train(utility.get_train())
+
+    calc_conditional_probabilities()
+
+    db_tweets = dao.get_all_tweets()
+
+    missing = 0
+    company_names = ['amazon', 'facebook', 'netflix', 'google', 'apple']
+    positive_predictions = {}
+    negative_predictions = {}
+    sentiment_values = {}
+
+    for company in company_names:
+        positive_predictions[company] = 0
+        negative_predictions[company] = 0
+        sentiment_values[company] = {}
+
+    bag_of_words = {"positive_train": {}, "negative_train": {},
+                    "positive_unseen": {}, "negative_unseen": {}}
+
+    for row in db_tweets:
+        current_positive = prior_probs["pos"]
+        current_negative = prior_probs["neg"]
+
+        if not isinstance(row[3], str):
+            missing += 1
+            continue
+
+        for word in row[3].split(" "):
+            laplace_smoothing(word)
+
+            current_positive *= positive_probs[word]
+            current_negative *= negative_probs[word]
+
+        if current_positive > current_negative:
+            positive_predictions[row[1]] += 1
+
+            # loop through each word in the current row
+            for word in row[3].split(" "):
+                if word == "climate" or word == "change" or word == "global":
+                    continue
+
+                if word not in bag_of_words["positive_unseen"].keys():
+                    bag_of_words["positive_unseen"][word] = 0
+
+                bag_of_words["positive_unseen"][word] += 1
+
+        else:
+            negative_predictions[row[1]] += 1
+            for word in row[3].split(" "):
+                if word == "climate" or word == "change" or word == "global":
+                    continue
+
+                if word not in bag_of_words["negative_unseen"].keys():
+                    bag_of_words["negative_unseen"][word] = 0
+
+                bag_of_words["negative_unseen"][word] += 1
+
+    for word in sorted(positive_dict, key=positive_dict.get, reverse=True):
+        if word == "climate" or word == "change" or word == "global":
+            continue
+        bag_of_words["positive_train"][word] = positive_dict[word]
+
+    for word in sorted(negative_dict, key=negative_dict.get, reverse=True):
+        if word == "climate" or word == "change" or word == "global":
+            continue
+        bag_of_words["negative_train"][word] = negative_dict[word]
+
+    return bag_of_words

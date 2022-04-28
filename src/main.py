@@ -1,4 +1,5 @@
 
+# local files
 from tweet import Tweet
 from data_access_object import DAO
 import scraper
@@ -61,7 +62,7 @@ while user_input != '0':
         # run Naive Bayes algorithm on Tweets in MySQL database
         naive_bayes.run_naive_bayes()
     elif user_input == "3":
-        utility.training_csv() # get training set
+        utility.create_training_csv() # get training set
         naive_bayes.cross_valdation() # run cross validation on local implementation
         naive_bayes.run_scikit() # run scikit-learns Naive Bayes
     elif user_input == "4":

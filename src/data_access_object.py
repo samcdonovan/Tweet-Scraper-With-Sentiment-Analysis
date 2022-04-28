@@ -1,16 +1,21 @@
 
-from re import S
-from tabnanny import check
-import time
+import time # for sleeping
 from mysql.connector import errorcode
-import datetime
-import mysql.connector
-import utility
-import json
+import mysql.connector # for DB connection
+import utility # local file
+
 
 class DAO():
+    """
+    Data Access Object class, for handling all MySQL DB queries and insertions.
+    """
 
     def new_connection(self):
+        """
+        Creates and returns a new DB connection to the scraped_tweets DB.
+            Returns:
+                connection (MySQL connection): The newly created connection.
+        """
         try:
             connection = mysql.connector.connect(
                 host="localhost",
@@ -32,40 +37,18 @@ class DAO():
 
             return None
 
-    def set_cursor(self, cursor):
-        self.cursor = cursor
-
-    def get_tweet_id_with_date(self, min_or_max, current_date, company_name):
-        previous_date = current_date - datetime.timedelta(1)
-        query = "SELECT " + min_or_max + "(id) FROM tweets WHERE company='" + company_name + \
-            "' AND timestamp BETWEEN '%s' and '%s'" % (
-                previous_date, current_date)
-
-        connection = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            password="",
-            database='scraped_tweets'
-        )
-        #connection = self.new_connection()
-
-        cursor = connection.cursor(buffered=True)
-        cursor.execute(query)
-        tweet_id = cursor.fetchone()
-        if tweet_id[0] is None:
-            query = "SELECT MAX(id) FROM tweets WHERE company='" + \
-                company_name + "' AND timestamp <= '%s'" % (previous_date)
-            cursor.execute(query)
-            tweet_id = cursor.fetchone()
-
-        cursor.close()
-        connection.close()
-        return tweet_id
-
     def get_newest_tweet(self, company_name):
+        """
+        Returns the newest Tweet in the DB for the specified company.
+            Parameters:
+                company_name (string): The name of the company.
+            Returns:
+                tweet (tweet object): The newest Tweet for that company.
+        """
+
+        # get Tweet with most recent timestamp for the company
         query = "SELECT MAX(id), MAX(timestamp) FROM tweets WHERE timestamp = (SELECT MAX(timestamp) FROM tweets WHERE company='" + company_name + "')"
 
-        #connection = self.new_connection()
         connection = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -85,20 +68,19 @@ class DAO():
             cursor.close()
             connection.close()
             return tweet
+
         except mysql.connector.Error as error:
             print("SQL database error: " + str(error))
             cursor.close()
             connection.close()
             return None
 
-    def get_tweet_id(self, min_or_max):
-        query = "SELECT " + min_or_max + "(id) FROM tweets"
-        self.cursor.execute(query)
-
-        return self.cursor.fetchone()
-
     def add_to_database(self, tweet):
-        #connection = self.new_connection()
+        """
+        Inserts a Tweet into the scraped_tweets MySQL table.
+            Parameters:
+                tweet (tweet object): The Tweet to be inserted into the DB.
+        """
         connection = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -107,17 +89,21 @@ class DAO():
         )
 
         cursor = connection.cursor(buffered=True)
+
+        # query the DB for a Tweet with the ID of the specified Tweet
         check_unique = "SELECT * FROM tweets WHERE id = " + \
             str(tweet.unique_id)
         cursor.execute(check_unique)
 
         check_result = cursor.fetchall()
 
+        # if the ID already exists in the table, break out of function
         if len(check_result) > 0:
             print("Tweet with ID " + str(tweet.unique_id) +
                   " already exists in the database.")
             return None
 
+        # insert the new Tweet into the table
         add_tweet = ("INSERT INTO tweets "
                      "(id, company, original_tweet, cleaned_tweet, timestamp)"
                      "VALUES (%s, %s, %s, %s, %s)")
@@ -126,11 +112,18 @@ class DAO():
 
         cursor.execute(add_tweet, tweet_data)
 
+        # close connection
         connection.commit()
         cursor.close()
         connection.close()
 
     def get_all_tweets(self):
+        """
+        Retrieves all of the Tweets from the database.
+            Returns:
+                tweets (list): List containing every row from scraped_tweets table.
+        """
+
         connection = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -140,6 +133,7 @@ class DAO():
 
         cursor = connection.cursor(buffered=True)
 
+        # get every Tweet ordered by its timestamp
         query = "SELECT * FROM tweets ORDER BY timestamp ASC"
 
         cursor.execute(query)
@@ -152,6 +146,14 @@ class DAO():
         return tweets
 
     def add_sentiment_values(self, company_name, num_positive, num_negative, sentiment_values):
+        """
+        Uploads the sentiment values from sentiment analysis into the database.
+            Parameters:
+                company_name (string): The name of the company that these values belong to.
+                num_positive (integer): The amount of positive Tweets about that company.
+                num_negative (integer): The amount of negative Tweets about that company.
+                sentiment_values (string): JSON string object containing individual date values.
+        """
         connection = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -160,15 +162,15 @@ class DAO():
         )
         cursor = connection.cursor(buffered=True)
 
+        # get all rows in sentiment_results table where the company is the specified company
         check_unique = "SELECT * FROM sentiment_results WHERE company = '" + company_name + "'"
         cursor.execute(check_unique)
 
         check_result = cursor.fetchall()
 
         if len(check_result) > 0:
-                     # query = "UPDATE sentiment_results SET num_positive = '%s', num_negative = '%s' WHERE company = '%s'" % (
-               # num_positive, num_negative, company_name)
-            
+
+            # if there already exists a row for the specified company, update it
             query = "UPDATE sentiment_results SET num_positive = '%s', num_negative = '%s', sentiment_values = '%s' WHERE company = '%s'" % (
                 num_positive, num_negative, sentiment_values, company_name)
 
@@ -176,20 +178,28 @@ class DAO():
             cursor.execute(query)
 
         else:
+            # if a row does not yet exist for the specified company, insert it into the table.
             query = ("INSERT INTO sentiment_results "
                      "(num_positive, num_negative, company, sentiment_values)"
                      "VALUES (%s, %s, %s, %s)")
 
             cursor = connection.cursor(buffered=True)
-            sentiment_data = (num_positive, num_negative, company_name, sentiment_values)
+            sentiment_data = (num_positive, num_negative,
+                              company_name, sentiment_values)
 
             cursor.execute(query, sentiment_data)
 
+        # close connection
         connection.commit()
         cursor.close()
         connection.close()
 
     def get_sentiment_values(self):
+        """
+        Retrieves the values obtained from sentiment analysis from the DB.
+            Returns:
+                sentiment_results (list): List containing all of the sentiment value rows in the DB.
+        """
         connection = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -199,7 +209,7 @@ class DAO():
 
         cursor = connection.cursor(buffered=True)
 
-        query = "SELECT * FROM sentiment_results"
+        query = "SELECT * FROM sentiment_results"  # get all rows
 
         cursor.execute(query)
         connection.commit()
@@ -210,14 +220,11 @@ class DAO():
 
         return sentiment_results
 
-    def close_connection(self):
-
-        self.cursor.close()
-        self.connection.close()
-        print("Database connection closed.")
-
     def clean_tweets_in_db(self):
-        query = "SELECT * FROM tweets"
+        """
+        Cleans and lemmatizes all of the Tweets currently stored in the DB.
+        """
+        query = "SELECT * FROM tweets"  # get every Tweet
         connection = mysql.connector.connect(
             host="localhost",
             user="root",
@@ -225,14 +232,13 @@ class DAO():
             database='scraped_tweets'
         )
 
+        # execute query through connection
         cursor = connection.cursor(buffered=True)
-
         cursor.execute(query)
-
         check_result = cursor.fetchall()
 
+        # loop through each retrieved Tweet
         for pos in range(0, len(check_result)):
-            exception = False
 
             connection = mysql.connector.connect(
                 host="localhost",
@@ -240,22 +246,12 @@ class DAO():
                 password="",
                 database='scraped_tweets'
             )
-
             cursor = connection.cursor(buffered=True)
-
-            if pos == len(check_result):
-                print("DB clean finished")
 
             processed_text = ""
             processed_text = utility.clean_and_lemmatize(check_result[pos][2])
-            """
-            if i == 3031 or i == 3076 or i == 3200 or i == 3377:
-                print(check_result[i])
-                print(processed_text)
-                continue
-           # print(str(i) + " " +
-              #    str(check_result[i][0]) + " " + processed_text)
-            """
+
+            # update current Tweet with newly cleaned and lemmatized text
             update_query = "UPDATE tweets SET cleaned_tweet = '%s' WHERE id = '%s'" % (
                 processed_text, check_result[pos][0])
 
@@ -265,7 +261,14 @@ class DAO():
 
                 print("Query : " + update_query)
                 print("Exception with " + str(pos) + " : " + str(ex))
-                exception = True
+                continue
 
-            if not exception:
-                connection.commit()
+            connection.commit()
+
+    def close_connection(self):
+        """
+        Close the database connection
+        """
+        self.cursor.close()
+        self.connection.close()
+        print("Database connection closed.")

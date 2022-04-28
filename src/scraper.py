@@ -110,25 +110,9 @@ class Scraper():
             if number_of_days < 7:
                 number_of_days = 7
 
-        # oldest_id = self.tweet_dao.get_tweet_id_with_date(
-         #   "MIN", current_day_in_week, self.company_name)
         oldest_id = 0
-        number_of_days = 7
-        try:
-            tweets = self.api.search_tweets(
-                q=self.search, lang="en", count=self.count, tweet_mode="extended",
-                 since_id=1516929737209303042, max_id=1517292378444513282)
-        
-            # extend search_tweets by adding the retrieved Tweets
-            self.search_tweets.extend(tweets)
-        except Exception as ex:
-            # if there is an exception, print it and continue
-            print("Tweepy error: " + str(ex))
-
-
-
+      
         # loop through every day in the past week
-        """
         for day_index in range(number_of_days + 1, 0, -1):
 
             current_day_in_week = today - datetime.timedelta(day_index)
@@ -153,7 +137,7 @@ class Scraper():
             if len(self.search_tweets) > 0:
                 # get most recent ID from the pulled Tweets
                 oldest_id = self.search_tweets[-1].id
-            """
+            
 
     def start(self):
         """

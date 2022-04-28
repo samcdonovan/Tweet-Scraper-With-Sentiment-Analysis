@@ -113,38 +113,59 @@ def plot_pie_charts():
 
 
 def plot_line_chart():
-
+    """
+    Plots line charts for the number of positive and negative Tweets on each date in the MySQL database.
+    """
     sentiment_values = DAO().get_sentiment_values()
     positive = {}
     negative = {}
     labels = ["Positive", "Negative"]
 
     totals = {"positive": {}, "negative": {}}
-    for index in range(0, 5):
 
+    # loop through each company
+    for index in range(0, 5):
+        
+        # convert JSON string from database to a JSON object
         json_sentiment = eval(sentiment_values[index][3])
         positive = {}
         negative = {}
+
+        # loop through each company in the sentiment values JSON object
         for key in json_sentiment.keys():
             if key not in totals["positive"].keys():
 
                 totals["positive"][key] = 0
                 totals["negative"][key] = 0
 
+            # add to totals dictionary for total line chart
             totals["positive"][key] += json_sentiment[key]["positive"]
             totals["negative"][key] += json_sentiment[key]["negative"]
 
+            # set each date in the positive and negative dictionaries
             positive[key] = json_sentiment[key]["positive"]
             negative[key] = json_sentiment[key]["negative"]
 
+        # call local draw line function with company name and positive and negative values for that company
         draw_line_chart(sentiment_values[index]
                         [0].capitalize(), positive, negative)
 
+    # draw line for all Tweets
     draw_line_chart("All Tweets", totals["positive"], totals["negative"])
 
 
 def draw_line_chart(name, positive, negative):
+    """
+    Uses plotly to draw a line chart for the specified company
+        Parameters:
+            name (string): The name of the company.
+            positive (dict): The number of positive Tweets for each date.
+            negative (dict): The number of negative Tweets for each date.
+    """
+
     fig = go.Figure()
+
+    # add two scatter lines to the figure, representing positive and negative
     fig.add_trace(go.Scatter(x=list(positive.keys()), y=list(positive.values()),
                              mode='lines+markers',
                              name='Positive',
@@ -154,6 +175,7 @@ def draw_line_chart(name, positive, negative):
                              name='Negative',
                              line=dict(color=chart_colours[1])))
 
+    # x axis styling
     fig.update_xaxes(
         tickangle=90,
         title_text="Date",
@@ -165,6 +187,7 @@ def draw_line_chart(name, positive, negative):
         dtick=86400000.0
     )
 
+    # y axis styling
     fig.update_yaxes(
         title_text="Number of Tweets",
         title_standoff=25,
@@ -174,6 +197,7 @@ def draw_line_chart(name, positive, negative):
         },
     )
 
+    # layout styling
     fig.update_layout(
         title_text="<b>" + name + "'s Tweet sentiment over time</b>",
         title_x=0.5,
@@ -182,7 +206,8 @@ def draw_line_chart(name, positive, negative):
         xaxis_range=[list(positive.keys())[0], list(positive.keys())[-1]],
         width=800, height=400
     )
-    fig.show()
+
+    fig.show() # show the charts
 
 
 def get_stop_words():
@@ -348,51 +373,52 @@ def get_test():
     return test_set
 
 
-def training_csv():
+def create_training_csv():
+    """
+    Creates the training dataset from the climate change and sentiment 140 datasets.
+    """
 
-    climate_dataframe = pd.read_csv('./data/sample_data.csv', encoding='ISO-8859-1', compression=None,
+    # load climate change dataset
+    climate_dataframe = pd.read_csv('./data/climate_change_dataset.csv', encoding='ISO-8859-1', compression=None,
                                     names=['target', 'text', 'id'])
 
     climate_data = climate_dataframe[['text', 'target']]
 
+    # change positive and negative numbers, just for consistency
     climate_data.loc[climate_data['target'] == 1, 'target'] = 2
     climate_data.loc[climate_data['target'] == -1, 'target'] = -2
 
+    # get negative and positive tweets from climate dataset
     climate_positive = climate_data[climate_data['target'] == 2]
     climate_negative = climate_data[climate_data['target'] == -2]
-    training_positive = climate_positive.iloc[-int(12000):]
-    #training_positive = pd.concat([climate_positive.iloc[:int(8500)], climate_positive.iloc[-int(8500):]])
-    #test_positive = climate_positive.iloc[-int(5000):]
 
+    training_positive = climate_positive.iloc[-int(12000):] # last 12000 items for positive set
+
+    # load sentiment 140 dataset
     sentiment_140_dataframe = pd.read_csv('./data/sentiment_140_dataset.csv', encoding='ISO-8859-1', compression=None,
                                           names=['target', 'ids', 'date', 'flag', 'user', 'text'])
 
     sentiment_140_data = sentiment_140_dataframe[['text', 'target']]
-    sentiment_140_data.loc[sentiment_140_data['target'] == 0, 'target'] = -2
 
-    sentiment_140_negative = sentiment_140_data[sentiment_140_data['target'] == -2]
+    sentiment_140_data.loc[sentiment_140_data['target'] == 0, 'target'] = -2 # set negative values to -2
+    sentiment_140_negative = sentiment_140_data[sentiment_140_data['target'] == -2] # get negative tweets from 140
 
-  #  training_negative = pd.concat([climate_negative.iloc[:int(4000)], sentiment_140_negative.iloc[:int(6500)],
-    #              sentiment_140_negative.iloc[-int(6500):]])
+    # make negative training set by getting the only 4000 negative Tweets from the climate set, and
+    # combining it with 8000 negative Tweets from the sentiment 140 set
     training_negative = pd.concat([climate_negative.iloc[:int(4000)],
                                   sentiment_140_negative.iloc[-int(8000):]])
-    #test_negative = sentiment_140_negative.iloc[-int(5000):]
 
-    climate_train = pd.concat([training_negative, training_positive])
-    """
-    climate_test = pd.concat([test_negative, test_positive])
+    # combine positive and negative training sets into one dataset
+    dataset= pd.concat([training_negative, training_positive]) 
 
-    training_set = climate_train
-    test_set = climate_test
-    dataset = pd.concat([training_set, test_set])
-    """
-    dataset = climate_train
-
+    # loop through each row in the dataset
     for index, row in dataset.iterrows():
 
+        # clean and lemmatize all Tweets in the training dataset
         dataset.loc[index, 'text'] = clean_and_lemmatize(row['text'])
 
     try:
+        # write to local file
         dataset.to_csv('./data/training_data.csv', index=False)
 
     except Exception as ex:
@@ -400,89 +426,45 @@ def training_csv():
 
 
 def get_fold_datasets():
+    """ 
+    Retrieves the datasets for the 5-fold tests.
+        Returns:
+            fold_data (dict): Dictionary containing all of the datasets for each fold.
+    """
     dataframe = pd.read_csv('./data/training_data.csv',
                             encoding='ISO-8859-1', compression=None)
 
-    dataframe = dataframe.sample(frac=1)
+    dataframe = dataframe.sample(frac=1) # randomise dataset
+
+    # split into positive and negative sets
     positive_set = dataframe[dataframe['target'] == 2]
     negative_set = dataframe[dataframe['target'] == -2]
 
     fold_data = {}
+
+    # loop from 0 to 5, for 5 folds
     for index in range(0, 5):
         fold_name = "fold-" + str(index)
         fold_data[fold_name] = {}
 
+        # the test sets will be 6000 Tweets, and because the dataset was split into
+        # positive and negative, this means there will be 3000 collected from each set
         start_index = index * 2000
         end_index = start_index + 3000
-        # print(start_index)
-        # print(end_index)
-        # print(len(positive_set))
+
         training_positive = pd.concat(
             [positive_set.iloc[0:start_index], positive_set.iloc[(end_index+1):]])
 
         training_negative = pd.concat(
             [negative_set.iloc[0:start_index], negative_set.iloc[(end_index+1):]])
-        #print(positive_set.iloc[start_index + 1:end_index])
-        # print(positive_set.iloc[20000:25000])
+
         training_set = pd.concat([training_positive, training_negative])
-        # print(training_set)
+
         test_set = pd.concat([positive_set.iloc[(start_index + 1):end_index],
                               negative_set.iloc[(start_index + 1):end_index]])
-        # print(test_set)
+
         fold_data[fold_name]["training"] = training_set
         fold_data[fold_name]["test"] = test_set
 
     return fold_data
-   # print(fold_data)
 
-
-def training_and_test_to_csv():
-
-    climate_dataframe = pd.read_csv('./data/sample_data.csv', encoding='ISO-8859-1', compression=None,
-                                    names=['target', 'text', 'id'])
-
-    climate_data = climate_dataframe[['text', 'target']]
-    climate_data.loc[climate_data['target'] == 1, 'target'] = 2
-    climate_data.loc[climate_data['target'] == -1, 'target'] = -2
-
-    climate_positive = climate_data[climate_data['target'] == 2]
-    climate_negative = climate_data[climate_data['target'] == -2]
-
-    sentiment_140_dataframe = pd.read_csv('./data/sentiment_140_dataset.csv', encoding='ISO-8859-1', compression=None,
-                                          names=['target', 'ids', 'date', 'flag', 'user', 'text'])
-
-    sentiment_140_data = sentiment_140_dataframe[['text', 'target']]
-    sentiment_140_data.loc[sentiment_140_data['target'] == 0, 'target'] = -2
-
-    training_positive = climate_positive.iloc[:int(8000)]
-
-    test_positive = climate_positive.iloc[-int(5000):]
-
-    sentiment_140_negative = sentiment_140_data[sentiment_140_data['target'] == -2]
-
-    training_negative = pd.concat([climate_negative.iloc[:int(4000)],
-                                  sentiment_140_negative.iloc[:int(4000)]])
-
-    test_negative = sentiment_140_negative.iloc[-int(5000):]
-
-    climate_train = pd.concat([training_negative, training_positive])
-    climate_test = pd.concat([test_negative, test_positive])
-
-    training_set = climate_train
-    test_set = climate_test
-
-    for index, row in training_set.iterrows():
-
-        training_set.loc[index, 'text'] = clean_and_lemmatize(row['text'])
-
-    for index, row in test_set.iterrows():
-
-        test_set.loc[index, 'text'] = clean_and_lemmatize(row['text'])
-
-    try:
-
-        training_set.to_csv('./data/training_set.csv', index=False)
-        test_set.to_csv('./data/test_set.csv', index=False)
-
-    except Exception as ex:
-        print("Training data error: " + str(ex))
