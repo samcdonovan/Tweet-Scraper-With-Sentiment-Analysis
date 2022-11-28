@@ -10,7 +10,7 @@
 
 ## 📝 Table of Contents
 - [About](#about)
-- [Libraries/Frameworks/Services](#built_using)
+- [Libraries/Frameworks/Modules](#built_using)
 - [Authors](#authors)
 
 ## ℹ️ About <a name = "about"></a>
